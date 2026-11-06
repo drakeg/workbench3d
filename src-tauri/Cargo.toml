@@ -1,6 +1,6 @@
 [package]
 name = "workbench3d"
-version = "0.2.0"
+version = "0.3.0"
 description = "Open-source push/pull 3D modeler"
 authors = ["Workbench3D contributors"]
 license = "MIT"
@@ -17,5 +17,6 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+tauri-plugin-window-state = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

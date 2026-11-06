@@ -47,7 +47,18 @@ export const AXES: Record<Axis, THREE.Vector3> = {
   z: new THREE.Vector3(0, 0, 1),
 };
 const AXIS_NAMES: Record<Axis, string> = { x: 'On Red Axis', y: 'On Green Axis', z: 'On Blue Axis' };
-export const AXIS_COLORS: Record<Axis, number> = { x: COLORS.axisX, y: COLORS.axisY, z: COLORS.axisZ };
+/** Axis colours follow the current theme, so read them at draw time. */
+export const AXIS_COLORS: Record<Axis, number> = {
+  get x() {
+    return COLORS.axisX;
+  },
+  get y() {
+    return COLORS.axisY;
+  },
+  get z() {
+    return COLORS.axisZ;
+  },
+};
 
 const SNAP_PX = 11;
 const EDGE_PX = 7;

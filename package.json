@@ -1,6 +1,6 @@
 {
   "name": "workbench3d",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Open-source 3D modeler for woodworking, welding, home and RV interior design. Push/pull modeling in the browser or as a desktop app.",
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs && node scripts/smoke-platform.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

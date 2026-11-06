@@ -18,7 +18,7 @@ export function axisFromKey(e: KeyboardEvent, current: Axis | null): Axis | null
 
 export function lineColor(a: THREE.Vector3, b: THREE.Vector3): number {
   const ax = alignedAxis(b.clone().sub(a));
-  return ax ? AXIS_COLORS[ax] : 0x111111;
+  return ax ? AXIS_COLORS[ax] : COLORS.ink;
 }
 
 /** Choose a drawing plane from what's under the cursor: the face, or the ground. */
@@ -186,7 +186,7 @@ export class RectangleTool implements Tool {
       pos.push(a.x, a.y, a.z, b.x, b.y, b.z);
     }
     const square = Math.abs(Math.abs(this.dims.du) - Math.abs(this.dims.dv)) < 1e-6 && Math.abs(this.dims.du) > 0;
-    app.vp.overlayLines(pos, square ? 0x0891b2 : 0x111111, 2.2);
+    app.vp.overlayLines(pos, square ? 0x0891b2 : COLORS.ink, 2.2);
     app.vp.overlayPolygon(c, COLORS.select, 0.12);
     app.setVCB(`${app.fmt(Math.abs(this.dims.du))}, ${app.fmt(Math.abs(this.dims.dv))}`);
   }
@@ -291,9 +291,9 @@ export class CircleTool implements Tool {
       const b = pts[(i + 1) % pts.length];
       pos.push(a.x, a.y, a.z, b.x, b.y, b.z);
     }
-    app.vp.overlayLines(pos, 0x111111, 2.2);
+    app.vp.overlayLines(pos, COLORS.ink, 2.2);
     const c = this.c!;
-    app.vp.overlayLines([c.x, c.y, c.z, pts[0].x, pts[0].y, pts[0].z], 0x6b7280, 1.4, true);
+    app.vp.overlayLines([c.x, c.y, c.z, pts[0].x, pts[0].y, pts[0].z], COLORS.muted, 1.4, true);
     app.setVCB(app.fmt(this.r), 'Radius');
   }
 

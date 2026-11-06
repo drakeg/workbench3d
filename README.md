@@ -23,11 +23,15 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
   - **Cut List:** every part with T × W × L, identical parts grouped, board feet, CSV export.
 - **Views:** standard views, perspective or parallel projection, X-ray, zoom extents.
 - **Files:** `.wb3d` (JSON, diff-friendly), export STL (for 3D printing, in mm), OBJ and PNG. Autosave keeps your work if the tab closes.
-- **Trackpad friendly:** Option/Alt-drag orbits and Option-Shift-drag pans, so you don't need a 3-button mouse.
+- **Trackpad friendly:** Option/Alt-drag orbits and Option-Shift-drag pans, so you don't need a 3-button mouse. Turn on *Two-finger scroll pans the view* in Settings to pan with two fingers and pinch to zoom.
+- **Copy and paste** parts between models and windows, and **drag a `.wb3d` file** onto the window to open it.
 
 ## Get it
 
-**Desktop app:** download the installer for your system from the [Releases page](https://github.com/drakeg/workbench3d/releases).
+**Desktop app:** download the installer for your system from the [Releases page](https://github.com/drakeg/workbench3d/releases). It follows each platform's conventions:
+
+- **Mac:** a real menu bar in Apple's order (Undo names the action, Open Recent, Window menu), Settings in its own window with ⌘,, traffic lights in the toolbar, system Dark Mode, double-click `.wb3d` files in Finder to open them, and it only asks about saving when there are unsaved changes.
+- **Windows:** Windows 11 type and spacing, sentence-case menus, Settings in the File menu and the toolbar gear (with an app theme choice), F1 help, F2 rename, Shift+F10 context menu, light/dark theme, and `.wb3d` files open from Explorer.
 On macOS the app is not yet signed with an Apple Developer ID. The first time you open it, right-click (or Control-click) the app → **Open** → **Open**.
 
 **In the browser:** run it locally (below) or use the GitHub Pages build if it's enabled for the repo. In Chrome or Edge you can install it as an app from the address bar.

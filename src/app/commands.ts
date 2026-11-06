@@ -1,5 +1,8 @@
 import { exportOBJ, exportSTL } from '../core/export';
 import { App, isMac } from './app';
+import { isDesktopApp, isWindows } from './os';
+import { copySelection, hasClip, paste } from './clipboard';
+import { settings } from './settings';
 import { FileTarget, openFile, saveFile, store } from './platform';
 import { dialog, form } from '../ui/dialogs';
 import { connected } from '../tools/select';
@@ -8,6 +11,21 @@ import { AddOnManager } from '../plugins/api';
 
 const MODEL_FILTER = [{ name: 'Workbench3D model', extensions: ['wb3d'] }];
 export const AUTOSAVE_KEY = 'workbench3d.autosave';
+const RECENT_KEY = 'workbench3d.recent';
+
+export function recentFiles(): { name: string; path: string }[] {
+  try {
+    return JSON.parse(store.get(RECENT_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+function addRecent(name: string, path: string): void {
+  const list = recentFiles().filter((r) => r.path !== path);
+  list.unshift({ name, path });
+  store.set(RECENT_KEY, JSON.stringify(list.slice(0, 10)));
+}
 
 export function registerCommands(app: App, addOns: AddOnManager): void {
   let target: FileTarget | null = null;
@@ -29,6 +47,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     target = t.handle || t.path ? t : null;
     app.doc.dirty = false;
     setName(t.name);
+    if (t.path) addRecent(t.name, t.path);
     app.toast(`Saved ${t.name}`);
   };
 
@@ -36,12 +55,14 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     // ----- File
     {
       id: 'file.new',
-      label: 'New',
+      label: 'New Model',
       menu: 'File',
       shortcut: 'Mod+N',
       run: async () => {
         if (!(await confirmDiscard())) return;
         app.doc.clear();
+        const st = settings();
+        app.doc.units = { system: st.units, fraction: st.fraction, mmDecimals: st.mmDecimals };
         app.contextId = 0;
         target = null;
         setName('Untitled');
@@ -58,15 +79,27 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         if (!(await confirmDiscard())) return;
         const r = await openFile(MODEL_FILTER);
         if (!r) return;
-        app.doc.load(r.text);
-        app.contextId = 0;
-        target = r.target.handle || r.target.path ? r.target : null;
-        setName(r.target.name);
-        app.vp.zoomExtents(app.modelBounds());
+        openText(r.text, r.target);
+      },
+    },
+    {
+      id: 'file.openRecent',
+      label: 'Open Recent',
+      menu: 'File',
+      enabled: () => isDesktopApp,
+      run: () => {},
+      submenu: () => {
+        const items: { label: string; run: () => void; enabled?: boolean; separatorBefore?: boolean }[] = recentFiles().map((r) => ({
+          label: r.name,
+          run: () => openPath(r.path),
+        }));
+        items.push({ label: 'Clear Menu', run: () => store.set(RECENT_KEY, '[]'), enabled: items.length > 0, separatorBefore: items.length > 0 });
+        return items;
       },
     },
     { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: () => save(false) },
-    { id: 'file.saveAs', label: 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: () => save(true) },
+    // Mac apps duplicate a document rather than "Save As"
+    { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: () => save(true) },
     {
       id: 'file.exportSTL',
       label: 'Export STL (3D printing)…',
@@ -113,8 +146,57 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       },
     },
     // ----- Edit
-    { id: 'edit.undo', label: 'Undo', menu: 'Edit', shortcut: 'Mod+Z', run: () => app.doc.undo(), enabled: () => app.doc.canUndo() },
-    { id: 'edit.redo', label: 'Redo', menu: 'Edit', shortcut: isMac ? 'Mod+Shift+Z' : 'Mod+Y', run: () => app.doc.redo(), enabled: () => app.doc.canRedo() },
+    {
+      id: 'edit.undo',
+      label: 'Undo',
+      dynamicLabel: () => (app.doc.undoLabel() ? `Undo ${app.doc.undoLabel()}` : 'Undo'),
+      menu: 'Edit',
+      shortcut: 'Mod+Z',
+      run: () => app.doc.undo(),
+      enabled: () => app.doc.canUndo(),
+    },
+    {
+      id: 'edit.redo',
+      label: 'Redo',
+      dynamicLabel: () => (app.doc.redoLabel() ? `Redo ${app.doc.redoLabel()}` : 'Redo'),
+      menu: 'Edit',
+      shortcut: isMac ? 'Mod+Shift+Z' : 'Mod+Y',
+      run: () => app.doc.redo(),
+      enabled: () => app.doc.canRedo(),
+    },
+    {
+      id: 'edit.cut',
+      label: 'Cut',
+      menu: 'Edit',
+      shortcut: 'Mod+X',
+      separatorBefore: true,
+      enabled: () => !app.selectionEmpty(),
+      run: () => {
+        if (copySelection(app)) app.runCommand('edit.delete');
+      },
+    },
+    {
+      id: 'edit.copy',
+      label: 'Copy',
+      menu: 'Edit',
+      shortcut: 'Mod+C',
+      context: true,
+      enabled: () => app.selection.faces.size + app.selection.edges.size + app.selection.groups.size > 0,
+      run: () => {
+        copySelection(app);
+      },
+    },
+    {
+      id: 'edit.paste',
+      label: 'Paste',
+      menu: 'Edit',
+      shortcut: 'Mod+V',
+      enabled: () => hasClip(),
+      run: () => {
+        if (paste(app, false)) app.setTool('move');
+      },
+    },
+    { id: 'edit.pasteInPlace', label: 'Paste in Place', menu: 'Edit', shortcut: 'Mod+Shift+V', enabled: () => hasClip(), run: () => void paste(app, true) },
     {
       id: 'edit.selectAll',
       label: 'Select All',
@@ -127,6 +209,15 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       },
     },
     { id: 'edit.selectNone', label: 'Select None', menu: 'Edit', shortcut: 'Mod+Shift+A', run: () => app.clearSelection() },
+    {
+      id: 'edit.rename',
+      label: 'Rename…',
+      menu: 'Edit',
+      shortcut: isWindows ? 'F2' : undefined,
+      context: true,
+      enabled: () => app.selection.groups.size === 1,
+      run: () => app.emit('rename'),
+    },
     {
       id: 'edit.delete',
       label: 'Delete',
@@ -317,6 +408,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     {
       id: 'view.perspective',
       label: 'Toggle Perspective / Parallel',
+      dynamicLabel: () => (app.vp.perspective ? 'Parallel Projection' : 'Perspective'),
       menu: 'View',
       separatorBefore: true,
       run: () => {
@@ -328,6 +420,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     {
       id: 'view.xray',
       label: 'Toggle X-Ray',
+      dynamicLabel: () => (app.xray ? 'Hide X-Ray' : 'Show X-Ray'),
       menu: 'View',
       shortcut: 'Shift+X',
       run: () => {
@@ -335,7 +428,24 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         app.refresh();
       },
     },
-    { id: 'view.grid', label: 'Toggle Grid', menu: 'View', run: () => app.vp.setGridVisible(!app.vp.showGrid) },
+    {
+      id: 'view.grid',
+      label: 'Toggle Grid',
+      dynamicLabel: () => (app.vp.showGrid ? 'Hide Grid' : 'Show Grid'),
+      menu: 'View',
+      run: () => app.vp.setGridVisible(!app.vp.showGrid),
+    },
+    {
+      id: 'view.inspector',
+      label: 'Toggle Inspector',
+      dynamicLabel: () => (document.querySelector('.app')?.classList.contains('no-panel') ? 'Show Inspector' : 'Hide Inspector'),
+      menu: 'View',
+      shortcut: isMac ? 'Ctrl+Mod+I' : undefined,
+      run: () => {
+        document.querySelector('.app')?.classList.toggle('no-panel');
+        app.vp.resize();
+      },
+    },
     {
       id: 'view.sectionCut',
       label: 'Toggle Section Cut',
@@ -357,6 +467,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     {
       id: 'view.sectionPlanes',
       label: 'Toggle Section Planes',
+      dynamicLabel: () => (app.showSectionPlanes ? 'Hide Section Planes' : 'Show Section Planes'),
       menu: 'View',
       run: () => {
         app.showSectionPlanes = !app.showSectionPlanes;
@@ -379,7 +490,9 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       label: 'Delete All Guides',
       menu: 'Edit',
       enabled: () => app.doc.guides.length > 0,
-      run: () => app.doc.transact('Delete Guides', () => (app.doc.guides = [])),
+      run: () => {
+        app.doc.transact('Delete Guides', () => (app.doc.guides = []));
+      },
     },
     {
       id: 'scene.add',
@@ -468,6 +581,15 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         app.emit('selection');
       },
     },
+    {
+      id: 'app.settings',
+      label: isWindows ? 'Settings' : 'Settings…',
+      // Mac: in the app menu with ⌘, (the native menu puts it there). Windows has no settings shortcut.
+      menu: isMac ? 'App' : 'File',
+      shortcut: isMac ? 'Mod+,' : undefined,
+      separatorBefore: true,
+      run: () => app.emit('settings'),
+    },
     // ----- Add-ons
     {
       id: 'addons.manage',
@@ -476,11 +598,21 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       run: () => addOnManagerDialog(app, addOns),
     },
     // ----- Help
-    { id: 'help.shortcuts', label: 'Keyboard Shortcuts', menu: 'Help', shortcut: 'Shift+?', run: () => shortcutsDialog(app) },
+    {
+      id: 'help.help',
+      label: 'Workbench3D Help',
+      menu: 'Help',
+      shortcut: isWindows ? 'F1' : 'Mod+Shift+/',
+      run: () => {
+        window.open('https://github.com/drakeg/workbench3d#quick-start', '_blank', 'noopener');
+      },
+    },
+    { id: 'help.shortcuts', label: 'Keyboard Shortcuts', menu: 'Help', shortcut: isWindows ? undefined : 'Shift+?', run: () => shortcutsDialog(app) },
     {
       id: 'help.about',
       label: 'About Workbench3D',
-      menu: 'Help',
+      // the Mac About item lives in the app menu
+      menu: isMac ? 'App' : 'Help',
       run: () =>
         dialog(
           'Workbench3D',
@@ -491,6 +623,36 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     },
   ];
   for (const c of cmds) app.registerCommand(c);
+
+  function openText(text: string, t: FileTarget) {
+    app.doc.load(text);
+    app.contextId = 0;
+    target = t.handle || t.path ? t : null;
+    setName(t.name);
+    if (t.path) addRecent(t.name, t.path);
+    app.vp.zoomExtents(app.modelBounds());
+  }
+
+  async function openPath(path: string) {
+    if (!(await confirmDiscard())) return;
+    try {
+      const fs = await import('@tauri-apps/plugin-fs');
+      openText(await fs.readTextFile(path), { name: path.split(/[\\/]/).pop() ?? 'model', path });
+    } catch (e) {
+      app.toast(`Couldn't open ${path}: ${(e as Error).message ?? e}`, 'error');
+    }
+  }
+  // used by Finder/Explorer "open with" and drag-and-drop
+  app.openFileText = async (text: string, name: string, path?: string) => {
+    if (!(await confirmDiscard())) return;
+    try {
+      openText(text, { name, path });
+    } catch (e) {
+      app.toast(`Couldn't open ${name}: ${(e as Error).message}`, 'error');
+    }
+  };
+  app.openFilePath = openPath;
+  app.saveCurrent = () => save(false);
 
   function hasGeometrySelection(): boolean {
     const s = app.selection;
@@ -526,14 +688,8 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
   });
 }
 
-function kbd(s: string): string {
-  return s
-    .replace('Mod', isMac ? '⌘' : 'Ctrl')
-    .replace('Shift', isMac ? '⇧' : 'Shift')
-    .replace('Alt', isMac ? '⌥' : 'Alt')
-    .replace(/\+/g, isMac ? '' : '+');
-}
-export { kbd };
+export { kbd } from './os';
+import { kbd } from './os';
 
 function shortcutsDialog(app: App): void {
   const rows: string[] = [];

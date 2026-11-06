@@ -50,11 +50,15 @@ export function dialog(title: string, content: string | HTMLElement, buttons: st
       if (e.key === 'Escape') {
         e.stopPropagation();
         close(null);
+      } else if (e.key === 'Enter' && !(e.target as HTMLElement).closest?.('form, textarea, select')) {
+        // Return is the default button, without the button having to hold focus
+        e.preventDefault();
+        (footer.querySelector('button.primary') as HTMLButtonElement | null)?.click();
       }
     };
     document.addEventListener('keydown', onKey, true);
     document.body.append(backdrop);
-    (footer.lastElementChild as HTMLElement | null)?.focus();
+    // windows open calm: nothing focused, no focus ring (forms focus their first field themselves)
   });
 }
 
