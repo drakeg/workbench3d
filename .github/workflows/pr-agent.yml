@@ -1,0 +1,58 @@
+# AI pull request reviews with PR-Agent (https://github.com/The-PR-Agent/pr-agent).
+# On every new PR it posts a description, a review and code suggestions.
+# You can also comment on a PR with /review, /describe, /improve or /ask "question".
+#
+# Setup: Settings → Secrets and variables → Actions → New repository secret
+#   ANTHROPIC_KEY  = your Anthropic API key (console.anthropic.com)
+# Prefer OpenAI? Add OPENAI_KEY instead and swap the commented lines below.
+# Without a key the job is skipped, so it never turns CI red.
+name: PR Agent
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  pr_agent:
+    # skip bots (Renovate, Dependabot) so they don't spend API credits; run comment commands only on PRs
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      (github.event_name == 'pull_request' || (github.event.issue.pull_request && startsWith(github.event.comment.body, '/')))
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_KEY != '' || secrets.OPENAI_KEY != '' }}
+    steps:
+      - name: Skip (no API key configured)
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::Add an ANTHROPIC_KEY (or OPENAI_KEY) repository secret to enable PR-Agent reviews."
+      - name: PR Agent
+        if: env.HAS_KEY == 'true'
+        uses: the-pr-agent/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # --- Anthropic (default) ---
+          ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_KEY }}
+          config.model: 'anthropic/claude-sonnet-5-5'
+          config.fallback_models: '["anthropic/claude-haiku-5-5"]'
+          config.custom_model_max_tokens: '200000'
+          # --- OpenAI (alternative): comment out the four lines above and uncomment these ---
+          # OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          # config.model: 'gpt-4o'
+          github_action_config.auto_review: 'true'
+          github_action_config.auto_describe: 'true'
+          github_action_config.auto_improve: 'true'
+          # keep the human-written PR title; add the AI summary below the description
+          pr_description.generate_ai_title: 'false'
+          pr_description.add_original_user_description: 'true'
+          # project context for better reviews
+          pr_reviewer.extra_instructions: >-
+            Workbench3D is a TypeScript/three.js push/pull 3D modeler. Internal units are inches, Z is up.
+            src/core must not touch the DOM. Model changes must go through doc.transact() or app.live() so undo works.
+            Tools must hold ids, not Group/Face object references, across live previews.
