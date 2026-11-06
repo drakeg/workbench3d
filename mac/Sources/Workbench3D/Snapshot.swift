@@ -65,6 +65,7 @@ enum Snapshot {
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
                                       styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                                       backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
                 window.title = "Workbench Sample"
                 window.toolbarStyle = .unified
                 window.contentView = NSHostingView(rootView: ContentView(document: document).themed())
@@ -84,6 +85,7 @@ enum Snapshot {
             if wants("settings") {
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 400), styleMask: [.titled, .closable],
                                       backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
                 window.title = "Settings"
                 let host = NSHostingController(rootView: SettingsView().themed())
                 host.sizingOptions = [.preferredContentSize]
