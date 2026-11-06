@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 /// An undirected edge between two vertex ids (smaller id first).
 public struct EdgeKey: Hashable, Comparable, Sendable, CustomStringConvertible {

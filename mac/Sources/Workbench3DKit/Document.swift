@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 // MARK: - File format (.wb3d), shared with the web app. See docs/ARCHITECTURE.md.
 

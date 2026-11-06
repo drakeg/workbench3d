@@ -74,7 +74,9 @@ public enum Units {
 
     /// "24, 48" or "24;48" or "2'x4'".
     public static func parseList(_ text: String, units: UnitSettings = .default) -> [Double]? {
-        let normalized = text.replacing(/\s+x\s+|(?<=['"\d])x(?=[\d.-])/, with: ",")
+        // "2'x4'" and "24 x 48" separate values too
+        let spaced = text.replacing(/\s+x\s+/, with: ",")
+        let normalized = spaced.replacing(/(['"\d])x(?=[\d.-])/) { m in "\(m.1)," }
         let parts = normalized.split(whereSeparator: { $0 == "," || $0 == ";" })
             .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         if parts.isEmpty { return nil }
