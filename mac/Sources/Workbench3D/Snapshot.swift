@@ -32,6 +32,7 @@ enum Snapshot {
     @MainActor
     static func runIfRequested() {
         guard let dir else { return }
+        setvbuf(stdout, nil, _IOLBF, 0)
         let env = ProcessInfo.processInfo.environment
         let only = env["APP_SNAPSHOT_PAGES"].map { Set($0.split(separator: ",").map(String.init)) }
         func wants(_ s: String) -> Bool { only?.contains(s) ?? true }
