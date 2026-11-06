@@ -58,7 +58,7 @@ export class PushPullTool implements Tool {
     op.live.apply(() => app.context.mesh.pushPull(op.faceId, d));
     app.vp.clearOverlay();
     const end = op.start.clone().add(op.n.clone().multiplyScalar(d));
-    app.vp.overlayLines([op.start.x, op.start.y, op.start.z, end.x, end.y, end.z], 0x6b7280, 1.4, true);
+    app.vp.overlayLines([op.start.x, op.start.y, op.start.z, end.x, end.y, end.z], COLORS.muted, 1.4, true);
     app.setVCB(app.fmt(Math.abs(d)));
   }
 
@@ -366,10 +366,10 @@ export class RotateTool implements Tool {
     app.vp.overlayLines(pos, ax ? AXIS_COLORS[ax] : COLORS.select, 1.8);
     if (this.stage >= 1) {
       const e = this.center.clone().add(this.ref.clone().multiplyScalar(r * 1.6));
-      app.vp.overlayLines([this.center.x, this.center.y, this.center.z, e.x, e.y, e.z], 0x6b7280, 1.4, true);
+      app.vp.overlayLines([this.center.x, this.center.y, this.center.z, e.x, e.y, e.z], COLORS.muted, 1.4, true);
     }
     if (cur) {
-      app.vp.overlayLines([this.center.x, this.center.y, this.center.z, cur.x, cur.y, cur.z], 0x111111, 1.4, true);
+      app.vp.overlayLines([this.center.x, this.center.y, this.center.z, cur.x, cur.y, cur.z], COLORS.ink, 1.4, true);
     }
   }
 

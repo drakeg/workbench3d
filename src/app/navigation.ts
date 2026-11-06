@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Viewport } from './viewport';
+import { settings } from './settings';
 
 export type NavMode = 'orbit' | 'pan' | 'zoom' | null;
 
@@ -27,7 +28,7 @@ export class Navigation {
   /** Decide whether a pointerdown is a navigation gesture. */
   wantsPointer(e: PointerEvent, toolNav: NavMode): NavMode {
     if (e.button === 1) return e.shiftKey ? 'pan' : 'orbit';
-    if (e.button === 2) return 'pan';
+    if (e.button === 2) return settings().rightDragOrbits && !e.shiftKey ? 'orbit' : 'pan';
     if (e.button === 0 && e.altKey) return e.shiftKey ? 'pan' : 'orbit';
     if (e.button === 0 && toolNav) return toolNav;
     return null;
@@ -133,9 +134,21 @@ export class Navigation {
     const rect = this.vp.dom.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    let dx = e.deltaX;
     let dy = e.deltaY;
-    if (e.deltaMode === 1) dy *= 16;
-    // pinch gestures arrive as ctrl+wheel with small deltas
+    if (e.deltaMode === 1) {
+      dx *= 16;
+      dy *= 16;
+    }
+    // trackpads: pinch arrives as ctrl+wheel. With "scroll pans" on, two-finger scroll pans like Maps.
+    if (settings().scrollPans && !e.ctrlKey) {
+      if (this.mode === null) {
+        this.panPlanePoint.copy(this.pickPoint(x, y) ?? this.vp.target);
+        this.pan(-dx, -dy);
+      }
+      return;
+    }
+    if (settings().invertZoom) dy = -dy;
     const k = e.ctrlKey ? 0.01 : 0.0015;
     this.zoomAt(x, y, Math.exp(dy * k));
   }

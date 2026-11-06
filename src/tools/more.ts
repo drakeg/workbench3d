@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { App } from '../app/app';
+import { COLORS } from '../app/viewport';
 import { Axis } from '../app/inference';
 import { closestParamOnLine, planeBasis } from '../core/geom';
 import { parseLength } from '../core/units';
@@ -92,7 +93,7 @@ export class ArcTool implements Tool {
     if (semicircle) s = Math.sign(s) * half;
     this.bulge = s;
     app.vp.clearOverlay();
-    app.vp.overlayLines(segs(this.points(this.a, this.b, s)), semicircle ? 0xc026d3 : 0x111111, 2.2);
+    app.vp.overlayLines(segs(this.points(this.a, this.b, s)), semicircle ? 0xc026d3 : COLORS.ink, 2.2);
     app.setVCB(app.fmt(Math.abs(s)), 'Bulge');
     app.setHint(semicircle ? 'Half circle' : this.hint);
   }
@@ -558,7 +559,7 @@ export class TapeTool implements Tool {
       const { p, dist } = this.parallel(inf.point);
       const d = this.edgeDir.clone().multiplyScalar(2000);
       app.vp.overlayLines([...segs([p.clone().sub(d), p.clone().add(d)])], 0x0d9488, 1.2, true, false);
-      app.vp.overlayLines(segs([a, p]), 0x111111, 1.6, true);
+      app.vp.overlayLines(segs([a, p]), COLORS.ink, 1.6, true);
       app.setVCB(app.fmt(dist));
       return;
     }
@@ -676,7 +677,7 @@ export class DimensionTool implements Tool {
     app.vp.clearOverlay();
     const a2 = this.a!.clone().add(this.offset);
     const b2 = this.b!.clone().add(this.offset);
-    app.vp.overlayLines([...segs([this.a!, a2]), ...segs([this.b!, b2]), ...segs([a2, b2])], 0x1f2937, 1.4, false);
+    app.vp.overlayLines([...segs([this.a!, a2]), ...segs([this.b!, b2]), ...segs([a2, b2])], COLORS.dimension, 1.4, false);
     app.setVCB(app.fmt(this.a!.distanceTo(this.b!)));
   }
 

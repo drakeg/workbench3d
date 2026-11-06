@@ -26,6 +26,8 @@ npm run build && npx vite preview --port 4173 &
 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node scripts/smoke.mjs
 ```
 
+Preview Mac or Windows conventions in any browser: `http://localhost:5173/?platform=mac` or `?platform=windows`, plus `&theme=dark`.
+
 Desktop app: install [Rust](https://rustup.rs) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/), then `npm run tauri dev`.
 
 Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
@@ -43,6 +45,7 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
 - TypeScript, strict mode. Prettier defaults (`.prettierrc`): 2 spaces, single quotes, 150 columns.
 - `src/core` must not touch the DOM so it stays testable in Node.
 - Change the model only inside `doc.transact(...)` (or `app.live(...)` for previews) so undo works.
+- Menu labels are written in Title Case; `menuLabel()` turns them into sentence case on Windows. Show shortcuts with `kbd()`, never by hand.
 - Lengths are inches internally. Convert only at the UI edge with `parseLength` / `formatLength`.
 - Original work only. Don't copy code, icons, textures or models from proprietary software. If you port code from another open-source project, its license must be MIT-compatible and credited.
 

@@ -5,12 +5,13 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Group } from '../core/document';
 import { parseEdgeKey } from '../core/mesh';
 
-export const COLORS = {
+const LIGHT = {
   background: 0xeef1f4,
   face: '#f4f1ea',
   back: 0x9fb0c6,
   edge: 0x1d1f22,
   edgeDim: 0xb4b8be,
+  loose: 0x1d1f22,
   select: 0x1a73e8,
   hover: 0xf2a900,
   axisX: 0xd93025,
@@ -18,7 +19,34 @@ export const COLORS = {
   axisZ: 0x1a5fd0,
   grid: 0xd5dae0,
   gridMajor: 0xc3cad3,
+  /** Preview lines and other "pen" strokes drawn by tools. */
+  ink: 0x111111,
+  muted: 0x6b7280,
+  dimension: 0x1f2937,
 };
+
+/** Dark mode is its own palette, not an inverted light one. */
+const DARK: typeof LIGHT = {
+  background: 0x24292f,
+  face: '#e9e5dc',
+  back: 0x7d8da3,
+  edge: 0x0b0d10,
+  edgeDim: 0x59616b,
+  loose: 0xd7dce2,
+  select: 0x4c9bff,
+  hover: 0xf5b82e,
+  axisX: 0xf2564b,
+  axisY: 0x3fb950,
+  axisZ: 0x5b9dff,
+  grid: 0x30363d,
+  gridMajor: 0x3d444d,
+  ink: 0xeef1f4,
+  muted: 0x9aa4af,
+  dimension: 0xd7dce2,
+};
+
+/** The current palette. Mutated in place when the theme changes, so read it at draw time. */
+export const COLORS = { ...LIGHT };
 
 export interface FaceHit {
   point: THREE.Vector3;
@@ -252,6 +280,19 @@ export class Viewport {
     axis(COLORS.axisZ, [0, 0, L], [0, 0, -L]);
   }
 
+  dark = false;
+
+  /** Switch the viewport between the light and dark palettes. */
+  setTheme(dark: boolean): void {
+    this.dark = dark;
+    Object.assign(COLORS, dark ? DARK : LIGHT);
+    for (const m of this.cachedMats.values()) m.dispose();
+    this.cachedMats.clear();
+    this.scene.background = new THREE.Color(COLORS.background);
+    this.buildHelpers();
+    this.requestRender();
+  }
+
   setGridVisible(v: boolean): void {
     this.showGrid = v;
     this.buildHelpers();
@@ -271,6 +312,7 @@ export class Viewport {
     const editingInside = ctx !== state.root;
 
     const edgeNormal: number[] = [];
+    const edgeLoose: number[] = [];
     const edgeDim: number[] = [];
     const edgeSel: number[] = [];
     const edgeHover: number[] = [];
@@ -367,7 +409,9 @@ export class Viewport {
               ? edgeHover
               : dim
                 ? edgeDim
-                : edgeNormal;
+                : mesh.lines.has(key)
+                  ? edgeLoose
+                  : edgeNormal;
         arr.push(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z);
       }
       // selected faces also show their edges as selected
@@ -386,6 +430,7 @@ export class Viewport {
     }
 
     if (edgeNormal.length) this.model.add(this.segments(edgeNormal, this.lineMat('edge', COLORS.edge, 1.4)));
+    if (edgeLoose.length) this.model.add(this.segments(edgeLoose, this.lineMat('loose', COLORS.loose, 1.4)));
     if (edgeDim.length) this.model.add(this.segments(edgeDim, this.lineMat('dim', COLORS.edgeDim, 1)));
     if (edgeHover.length) this.model.add(this.segments(edgeHover, this.lineMat('hover', COLORS.hover, 2)));
     if (edgeSel.length) {
@@ -419,7 +464,7 @@ export class Viewport {
       const g = ctx.children.find((c) => c.id === id);
       if (g && !isHidden(g)) this.model.add(this.boxLines(g, this.lineMat('selbox', COLORS.select, 1.2)));
     }
-    if (editingInside) this.model.add(this.boxLines(ctx, this.lineMat('ctxbox', 0x6b7280, 1, true)));
+    if (editingInside) this.model.add(this.boxLines(ctx, this.lineMat('ctxbox', COLORS.muted, 1, true)));
     this.buildAnnotations(state);
     this.requestRender();
   }
@@ -477,7 +522,7 @@ export class Viewport {
       this.labelLayer.append(el);
       this.labels.push({ el, pos: a2.clone().add(b2).multiplyScalar(0.5) });
     }
-    if (dim.length) this.annotations.add(this.segments(dim, this.lineMat('dimension', 0x1f2937, 1.2)));
+    if (dim.length) this.annotations.add(this.segments(dim, this.lineMat('dimension', COLORS.dimension, 1.2)));
     if (dimSel.length) this.annotations.add(this.segments(dimSel, this.lineMat('dimensionsel', COLORS.select, 1.8)));
 
     // section planes
@@ -519,7 +564,7 @@ export class Viewport {
   }
 
   /** Show or clear the inference engine's dotted helper line. */
-  setInferenceGuide(seg: [THREE.Vector3, THREE.Vector3] | null, color = 0x6b7280): void {
+  setInferenceGuide(seg: [THREE.Vector3, THREE.Vector3] | null, color = COLORS.muted): void {
     for (const c of this.inferenceOverlay.children) disposeDeep(c);
     this.inferenceOverlay.clear();
     if (seg) {

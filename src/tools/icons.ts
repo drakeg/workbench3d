@@ -23,6 +23,7 @@ export const icons = {
   scale: svg('<rect x="3.5" y="9.5" width="11" height="11"/><path d="M9 4h11v11" stroke-dasharray="2 1.6"/><path d="M13 11l7-7M15.5 4H20v4.5"/>'),
   dimension: svg('<path d="M4 6v12M20 6v12M4 12h16"/><path d="M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5"/>'),
   section: svg('<path d="M4 7l9-3.5 7 3.5-9 3.5z" opacity=".5"/><path d="M4 7v10l7 3.5V10.5M20 7v10l-9 3.5"/><path d="M15.5 13.5l4.5 1.5" stroke-width="2.2"/>'),
+  settings: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/>'),
   board: svg('<path d="M3 15l12-7 6 3.5-12 7z"/><path d="M3 15v2l6 3.5v-2M21 11.5v2l-12 7"/><path d="M8 12.5l1.5.9M12 10.3l1.5.9"/>'),
   steel: svg('<path d="M4 7h16v10H4z"/><path d="M7 10h10v4H7z"/>'),
   list: svg('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.6"/>'),

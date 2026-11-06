@@ -18,7 +18,14 @@
         "minWidth": 900,
         "minHeight": 600,
         "resizable": true,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "label": "main",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 14,
+          "y": 13
+        }
       }
     ],
     "security": {
@@ -48,6 +55,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
   }
 }
