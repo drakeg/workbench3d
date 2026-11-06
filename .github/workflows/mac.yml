@@ -27,3 +27,17 @@ jobs:
         run: swift build -c release --arch arm64 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
       - name: Engine tests
         run: swift test 2>&1 | tail -60; exit ${PIPESTATUS[0]}
+      - name: Build the app bundle
+        run: ./build.sh
+      - name: Self-test
+        timeout-minutes: 5
+        run: tools/selftest.sh
+      - name: Snapshots
+        timeout-minutes: 5
+        run: tools/snap.sh; ls -la /tmp/Workbench3D-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-snapshots
+          path: /tmp/Workbench3D-shots
+          if-no-files-found: warn

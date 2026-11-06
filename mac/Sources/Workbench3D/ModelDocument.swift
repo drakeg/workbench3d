@@ -23,6 +23,11 @@ final class ModelDocument: ReferenceFileDocument {
         model.units = AppSettings.unitsForNewModels
     }
 
+    /// A document around an existing model (snapshots, self-test).
+    init(model: WBDocument) {
+        self.model = model
+    }
+
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else { throw CocoaError(.fileReadCorruptFile) }
         model = try WBDocument(data: data)

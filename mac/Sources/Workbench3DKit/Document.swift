@@ -72,6 +72,11 @@ public struct Guide: Codable, Equatable, Sendable {
     public var id: Int
     public var point: V3Array
     public var dir: V3Array?
+    public init(id: Int, point: V3Array, dir: V3Array? = nil) {
+        self.id = id
+        self.point = point
+        self.dir = dir
+    }
 }
 
 public struct Dimension: Codable, Equatable, Sendable {

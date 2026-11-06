@@ -14,4 +14,20 @@
 <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSPrincipalClass</key><string>NSApplication</string>
+<key>CFBundleDocumentTypes</key><array><dict>
+  <key>CFBundleTypeName</key><string>Workbench3D Model</string>
+  <key>CFBundleTypeRole</key><string>Editor</string>
+  <key>LSHandlerRank</key><string>Owner</string>
+  <key>LSItemContentTypes</key><array><string>io.github.drakeg.workbench3d.model</string></array>
+</dict></array>
+<key>UTExportedTypeDeclarations</key><array><dict>
+  <key>UTTypeIdentifier</key><string>io.github.drakeg.workbench3d.model</string>
+  <key>UTTypeDescription</key><string>Workbench3D Model</string>
+  <key>UTTypeConformsTo</key><array><string>public.json</string><string>public.data</string></array>
+  <key>UTTypeIconFile</key><string>AppIcon</string>
+  <key>UTTypeTagSpecification</key><dict>
+    <key>public.filename-extension</key><array><string>wb3d</string></array>
+    <key>public.mime-type</key><array><string>application/vnd.workbench3d+json</string></array>
+  </dict>
+</dict></array>
 </dict></plist>

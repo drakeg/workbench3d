@@ -1,12 +1,12 @@
 # Workbench3D
 
-A native macOS app in SwiftUI. It runs on this Mac only, with a local
-SwiftData database and no server.
+The native macOS version of Workbench3D (Apple silicon, macOS 26). A SwiftUI
+document app with a Metal 3D view. It opens the same .wb3d files as the web app.
 
 ## Layout
 
-- `Sources/Workbench3D/` the app. `App.swift` has the window, menus, and the database location.
-- `Sources/Workbench3DKit/` rules and data logic with no SwiftUI. Tests in `Tests/Workbench3DKitTests/`.
+- `Sources/Workbench3D/` the app. `App.swift` has the document windows and menus; `Editor.swift` the per-window editing state; `Tools/` the modeling tools; `Viewport/` the Metal renderer and input.
+- `Sources/Workbench3DKit/` the geometry engine and file format, a port of `src/core/`, with no SwiftUI. Tests in `Tests/Workbench3DKitTests/`.
 - `Package.swift` a Swift package. There is no Xcode project.
 - `build.sh` builds, signs, and installs `~/Applications/Workbench3D.app`.
 - `Icon/AppIcon.icon` the app icon, an Icon Composer file (JSON plus SVG layers). `build.sh` compiles it with `tools/make_icon.sh`; `tools/icon_review.sh` renders every look into one PNG.
@@ -18,10 +18,9 @@ SwiftData database and no server.
 - Unit tests: `swift test --scratch-path ~/Library/Developer/Workbench3D/test-build`.
 - Self-test (the app's real functions on a /tmp store): `tools/selftest.sh`. Exit 0 when every check passes. Add a check for every story with logic in `SelfTest.swift`.
 - After every UI change, take snapshots with sample data and look at them: `tools/snap.sh`.
-  It writes `/tmp/Workbench3D-shots/<page>-light.png` and `-dark.png` for every sidebar page, and `settings-<tab>-light.png` and `-dark.png` for every Settings tab, then quits. `APP_SNAPSHOT_PAGES=all,settings tools/snap.sh` limits the pages.
+  It writes `/tmp/Workbench3D-shots/model-<view>-<mode>.png` (offscreen Metal renders), `window-<mode>.png`, and `settings-<tab>-<mode>.png`, then quits. `APP_SNAPSHOT_PAGES=model,settings tools/snap.sh` limits them.
   For a panel, sheet, or popover, add a capture to `Snapshot.swift` like the Settings loop.
-- Snapshots, seed data, and the self-test refuse to run without `APP_STORE` in /tmp.
-- Never test against the real database in `~/Library/Application Support/Workbench3D/`.
+- Snapshots and the self-test use in-memory models (the sample in `SampleModel.swift`) and never touch your files.
 - Then check the grid: `tools/grid-lint.sh` and `swift tools/check-layout.swift /tmp/Workbench3D-shots/*-layout.json`. Both print PASS.
 - A change is done when the build has no errors, the grid checks pass, and you looked at the light and dark snapshots.
 
