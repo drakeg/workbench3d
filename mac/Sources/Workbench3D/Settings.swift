@@ -2,7 +2,7 @@ import SwiftUI
 import Workbench3DKit
 
 /// App preferences (not saved in models), in UserDefaults. Views read them with @AppStorage.
-enum AppSettings {
+nonisolated enum AppSettings {
     enum Keys {
         static let units = "units.system"
         static let fraction = "units.fraction"
