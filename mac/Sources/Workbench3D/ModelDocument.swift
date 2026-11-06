@@ -11,7 +11,7 @@ nonisolated extension UTType {
 /// One open model. SwiftUI's DocumentGroup gives it New, Open, Open Recent, Save, Duplicate,
 /// Rename, Revert, autosave and versions. Edits go through `Editor.perform`, which registers
 /// Undo with the window's UndoManager; that is also how SwiftUI knows the document changed.
-nonisolated final class ModelDocument: ReferenceFileDocument {
+nonisolated final class ModelDocument: ReferenceFileDocument, @unchecked Sendable {
     static var readableContentTypes: [UTType] { [.workbench3DModel, .json] }
     static var writableContentTypes: [UTType] { [.workbench3DModel] }
 

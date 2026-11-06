@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 @testable import Workbench3DKit
 
 // Ports of the web app's tests (tests/*.test.ts), so both engines are held to the same results.
