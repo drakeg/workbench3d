@@ -23,7 +23,7 @@ jobs:
           sleep 3
           CHROME_PATH=$(which google-chrome) node scripts/smoke.mjs http://localhost:4173/ .
           CHROME_PATH=$(which google-chrome) node scripts/smoke-platform.mjs http://localhost:4173/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: screenshots
