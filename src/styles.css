@@ -321,7 +321,8 @@ kbd {
   pointer-events: none;
 }
 .toast {
-  pointer-events: auto;
+  /* notices never block clicks on the model; only their buttons are clickable */
+  pointer-events: none;
   background: #1f2933;
   color: #fff;
   padding: 8px 12px;
@@ -336,6 +337,7 @@ kbd {
   background: #b42318;
 }
 .toast button {
+  pointer-events: auto;
   background: rgba(255, 255, 255, 0.15);
   border: 0;
   color: #fff;

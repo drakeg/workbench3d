@@ -107,8 +107,10 @@ await page.screenshot({ path: `${out}/model.png` });
 // ---------- part 2: modeling on faces ----------
 const MOD = process.platform === 'darwin' ? 'Meta' : 'Control';
 await page.evaluate(() => {
-  window.workbench.doc.clear();
-  window.workbench.setTool('select');
+  const a = window.workbench;
+  a.doc.clear();
+  a.setTool('select');
+  a.vp.setStandardView('iso', a.modelBounds());
 });
 const proj = (x, y, z) =>
   page.evaluate(([x, y, z]) => {
@@ -269,8 +271,10 @@ await page.waitForTimeout(150);
 await page.screenshot({ path: `${out}/cabinet.png` });
 // ---------- part 4: edit inside a group, circles, paint, eraser ----------
 await page.evaluate(() => {
-  window.workbench.doc.clear();
-  window.workbench.setTool('select');
+  const a = window.workbench;
+  a.doc.clear();
+  a.setTool('select');
+  a.vp.setStandardView('iso', a.modelBounds()); // frame the origin again
 });
 await page.keyboard.press('c');
 p = await proj(0, 0, 0);
