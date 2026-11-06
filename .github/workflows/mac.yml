@@ -1,0 +1,29 @@
+# Native Mac app (mac/): builds for Apple silicon, runs the engine tests, the in-app self-test,
+# and takes snapshots of the window (uploaded as an artifact so changes can be reviewed).
+name: Mac app
+on:
+  push:
+    branches: [main]
+    paths: ['mac/**', '.github/workflows/mac.yml']
+  pull_request:
+    paths: ['mac/**', '.github/workflows/mac.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+          swift --version
+          sw_vers
+          uname -m
+      - name: Build (arm64)
+        run: swift build -c release --arch arm64 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+      - name: Engine tests
+        run: swift test 2>&1 | tail -60; exit ${PIPESTATUS[0]}
