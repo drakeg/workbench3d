@@ -37,6 +37,15 @@ export interface RenderState {
   hoverFace?: { groupId: number; faceId: number } | null;
   hoverGroup?: number | null;
   xray: boolean;
+  guides?: { point: THREE.Vector3; dir?: THREE.Vector3; id: number }[];
+  dimensions?: { a: THREE.Vector3; b: THREE.Vector3; offset: THREE.Vector3; id: number; text: string }[];
+  /** Active section plane: geometry on its positive side is cut away. */
+  section?: { point: THREE.Vector3; normal: THREE.Vector3 } | null;
+  /** Inactive section planes, drawn as outlines. */
+  sectionOutlines?: { point: THREE.Vector3; normal: THREE.Vector3; active: boolean; id: number }[];
+  selectedItems?: Set<number>;
+  /** Half-size of the drawn section plane outline. */
+  sectionSize?: number;
 }
 
 interface PickMesh extends THREE.Mesh {
@@ -54,6 +63,12 @@ export class Viewport {
   readonly target = new THREE.Vector3(0, 0, 0);
   private model = new THREE.Group();
   readonly overlay = new THREE.Group();
+  /** Dotted helper lines from the inference engine (e.g. From Point). */
+  readonly inferenceOverlay = new THREE.Group();
+  private annotations = new THREE.Group();
+  private labelLayer: HTMLDivElement;
+  private labels: { el: HTMLElement; pos: THREE.Vector3 }[] = [];
+  clipPlane: THREE.Plane | null = null;
   private helpers = new THREE.Group();
   private pickMeshes: PickMesh[] = [];
   private lineMaterials: LineMaterial[] = [];
@@ -88,7 +103,10 @@ export class Viewport {
     fill.position.set(0.6, 0.5, 0.3);
     this.scene.add(fill);
 
-    this.scene.add(this.helpers, this.model, this.overlay);
+    this.scene.add(this.helpers, this.model, this.annotations, this.overlay, this.inferenceOverlay);
+    this.labelLayer = document.createElement('div');
+    this.labelLayer.className = 'label-layer';
+    container.appendChild(this.labelLayer);
     this.buildHelpers();
     new ResizeObserver(() => this.resize()).observe(container);
     this.resize();
@@ -97,6 +115,7 @@ export class Viewport {
         this.needsRender = false;
         this.syncOrtho();
         this.renderer.render(this.scene, this.camera);
+        this.positionLabels();
       }
       requestAnimationFrame(loop);
     };
@@ -401,6 +420,114 @@ export class Viewport {
       if (g && !isHidden(g)) this.model.add(this.boxLines(g, this.lineMat('selbox', COLORS.select, 1.2)));
     }
     if (editingInside) this.model.add(this.boxLines(ctx, this.lineMat('ctxbox', 0x6b7280, 1, true)));
+    this.buildAnnotations(state);
+    this.requestRender();
+  }
+
+  // ---------- guides, dimensions, section planes ----------
+
+  private buildAnnotations(state: RenderState): void {
+    for (const c of this.annotations.children) disposeDeep(c);
+    this.annotations.clear();
+    for (const l of this.labels) l.el.remove();
+    this.labels = [];
+    const sel = state.selectedItems ?? new Set<number>();
+    const guideLines: number[] = [];
+    const guideSel: number[] = [];
+    for (const g of state.guides ?? []) {
+      const arr = sel.has(g.id) ? guideSel : guideLines;
+      if (g.dir) {
+        const d = g.dir.clone().normalize().multiplyScalar(3000);
+        const a = g.point.clone().sub(d);
+        const b = g.point.clone().add(d);
+        arr.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      } else {
+        const r = 0.6;
+        for (const ax of [new THREE.Vector3(r, 0, 0), new THREE.Vector3(0, r, 0), new THREE.Vector3(0, 0, r)]) {
+          const a = g.point.clone().sub(ax);
+          const b = g.point.clone().add(ax);
+          arr.push(a.x, a.y, a.z, b.x, b.y, b.z);
+        }
+      }
+    }
+    if (guideLines.length) this.annotations.add(this.segments(guideLines, this.lineMat('guide', 0x0d9488, 1, true)));
+    if (guideSel.length) this.annotations.add(this.segments(guideSel, this.lineMat('guidesel', COLORS.select, 1.6, true)));
+
+    const dim: number[] = [];
+    const dimSel: number[] = [];
+    for (const d of state.dimensions ?? []) {
+      const arr = sel.has(d.id) ? dimSel : dim;
+      const a2 = d.a.clone().add(d.offset);
+      const b2 = d.b.clone().add(d.offset);
+      // extension lines, dimension line, small ticks
+      const ext = d.offset.clone().normalize().multiplyScalar(0.4);
+      for (const [p, q] of [
+        [d.a, a2.clone().add(ext)],
+        [d.b, b2.clone().add(ext)],
+        [a2, b2],
+      ] as [THREE.Vector3, THREE.Vector3][])
+        arr.push(p.x, p.y, p.z, q.x, q.y, q.z);
+      const along = b2.clone().sub(a2).normalize();
+      const tick = new THREE.Vector3().crossVectors(along, d.offset.clone().normalize()).add(along).normalize().multiplyScalar(0.5);
+      for (const p of [a2, b2]) arr.push(p.x - tick.x, p.y - tick.y, p.z - tick.z, p.x + tick.x, p.y + tick.y, p.z + tick.z);
+      const el = document.createElement('div');
+      el.className = `dim-label${sel.has(d.id) ? ' selected' : ''}`;
+      el.textContent = d.text;
+      el.dataset.id = String(d.id);
+      this.labelLayer.append(el);
+      this.labels.push({ el, pos: a2.clone().add(b2).multiplyScalar(0.5) });
+    }
+    if (dim.length) this.annotations.add(this.segments(dim, this.lineMat('dimension', 0x1f2937, 1.2)));
+    if (dimSel.length) this.annotations.add(this.segments(dimSel, this.lineMat('dimensionsel', COLORS.select, 1.8)));
+
+    // section planes
+    // the section cuts only the model, never the grid, axes, guides or dimensions
+    this.clipPlane = state.section ? new THREE.Plane().setFromNormalAndCoplanarPoint(state.section.normal.clone().negate(), state.section.point) : null;
+    this.renderer.localClippingEnabled = true;
+    const planes = this.clipPlane ? [this.clipPlane] : [];
+    this.model.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+      if (m) m.clippingPlanes = planes;
+    });
+    for (const sp of state.sectionOutlines ?? []) {
+      const { u, v } = basisFor(sp.normal);
+      const r = state.sectionSize ?? 30;
+      const c = [
+        [-r, -r],
+        [r, -r],
+        [r, r],
+        [-r, r],
+      ].map(([x, y]) => sp.point.clone().add(u.clone().multiplyScalar(x)).add(v.clone().multiplyScalar(y)));
+      const pos: number[] = [];
+      for (let i = 0; i < 4; i++) pos.push(c[i].x, c[i].y, c[i].z, c[(i + 1) % 4].x, c[(i + 1) % 4].y, c[(i + 1) % 4].z);
+      const arrow = sp.point.clone().add(sp.normal.clone().normalize().multiplyScalar(8));
+      pos.push(sp.point.x, sp.point.y, sp.point.z, arrow.x, arrow.y, arrow.z);
+      const color = sel.has(sp.id) ? COLORS.select : sp.active ? 0xea580c : 0x9ca3af;
+      const lines = this.segments(pos, this.lineMat(`sec${color}`, color, 1.6));
+      lines.material = (lines.material as LineMaterial).clone();
+      (lines.material as LineMaterial).clippingPlanes = [];
+      this.annotations.add(lines);
+    }
+  }
+
+  private positionLabels(): void {
+    for (const l of this.labels) {
+      const s = this.project(l.pos);
+      l.el.style.display = s.behind ? 'none' : 'block';
+      l.el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -50%)`;
+    }
+  }
+
+  /** Show or clear the inference engine's dotted helper line. */
+  setInferenceGuide(seg: [THREE.Vector3, THREE.Vector3] | null, color = 0x6b7280): void {
+    for (const c of this.inferenceOverlay.children) disposeDeep(c);
+    this.inferenceOverlay.clear();
+    if (seg) {
+      const [a, b] = seg;
+      const l = this.segments([a.x, a.y, a.z, b.x, b.y, b.z], this.lineMat(`infer${color}`, color, 1.2, true));
+      l.renderOrder = 11;
+      this.inferenceOverlay.add(l);
+    }
     this.requestRender();
   }
 
@@ -488,6 +615,7 @@ export class Viewport {
     for (const h of hits) {
       const pm = h.object as PickMesh;
       if (h.faceIndex == null) continue;
+      if (this.clipPlane && this.clipPlane.distanceToPoint(h.point) < 0) continue;
       const faceId = pm.userData.triFace[h.faceIndex];
       const g = pm.userData.group;
       const f = g.mesh.faces.get(faceId);
@@ -547,9 +675,23 @@ export class Viewport {
   }
 }
 
+let hiddenTags = new Set<string>();
+/** Tags whose groups are currently hidden. */
+export function setHiddenTags(tags: Set<string>): void {
+  hiddenTags = tags;
+}
+
 export function isHidden(g: Group): boolean {
-  for (let p: Group | null = g; p; p = p.parent) if (p.hidden) return true;
+  for (let p: Group | null = g; p; p = p.parent) if (p.hidden || (p.tag && hiddenTags.has(p.tag))) return true;
   return false;
+}
+
+function basisFor(n: THREE.Vector3): { u: THREE.Vector3; v: THREE.Vector3 } {
+  const nn = n.clone().normalize();
+  const ref = Math.abs(nn.z) < 0.9 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+  const u = new THREE.Vector3().crossVectors(ref, nn).normalize();
+  const v = new THREE.Vector3().crossVectors(nn, u).normalize();
+  return { u, v };
 }
 
 function disposeDeep(o: THREE.Object3D, materialsToo = false): void {

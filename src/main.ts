@@ -2,7 +2,8 @@ import './styles.css';
 import { App } from './app/app';
 import { registerCommands, restoreAutosave } from './app/commands';
 import { CircleTool, LineTool, RectangleTool } from './tools/draw';
-import { MoveTool, OrbitTool, PanTool, PushPullTool, RotateTool, TapeTool, ZoomTool } from './tools/modify';
+import { MoveTool, OrbitTool, PanTool, PushPullTool, RotateTool, ZoomTool } from './tools/modify';
+import { ArcTool, DimensionTool, OffsetTool, PolygonTool, ScaleTool, SectionTool, TapeTool } from './tools/more';
 import { EraserTool, PaintTool, SelectTool } from './tools/select';
 import { AddOnManager } from './plugins/api';
 import { UI } from './ui/ui';
@@ -23,11 +24,17 @@ async function boot() {
     new PaintTool(),
     new LineTool(),
     new RectangleTool(),
+    new ArcTool(),
     new CircleTool(),
+    new PolygonTool(),
     new PushPullTool(),
+    new OffsetTool(),
     new MoveTool(),
     new RotateTool(),
+    new ScaleTool(),
     new TapeTool(),
+    new DimensionTool(),
+    new SectionTool(),
     OrbitTool,
     PanTool,
     ZoomTool,

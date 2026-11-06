@@ -9,13 +9,14 @@ Runs in your browser or as a desktop app on macOS, Windows and Linux. MIT licens
 
 Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group the parts, and get a cut list. If you've used a push/pull modeler before, the workflow will feel familiar: same kind of tools, same single-key shortcuts, type exact sizes at any time.
 
-## Features (v0.1)
+## Features
 
 - **Push/pull modeling.** Draw on the ground or on any face, push/pull faces into solids. Rectangles drawn on a face become pockets or bosses; lines across a face split it, so rabbets, dados and notches work.
-- **Smart snapping.** Endpoint, midpoint, on-edge, on-face, and red/green/blue axis inference. Arrow keys lock an axis (→ red, ← green, ↑ blue).
+- **Smart snapping.** Endpoint, midpoint, on-edge, on-face, red/green/blue axes, parallel/perpendicular to an edge, and "from point" alignment. Arrow keys lock an axis (→ red, ← green, ↑ blue); hold **Shift** to lock whatever direction you're on.
 - **Exact input.** Just start typing: `24, 48` for a rectangle, `3/4` for a push/pull, `2' 6-1/2"`, `19mm`, `x5` for five copies.
-- **Groups.** Parts stay separate and don't stick to each other. Double-click to edit inside a group.
-- **Tools:** Select, Eraser, Paint, Line, Rectangle, Circle, Push/Pull, Move (with copy and arrays), Rotate (with 15° snaps), Tape Measure, Orbit, Pan, Zoom.
+- **Groups and components.** Parts stay separate and don't stick to each other. Components are reusable parts: edit one and every copy updates (Make Unique breaks the link). Double-click to edit inside.
+- **Tools:** Select, Eraser, Paint, Line, Arc, Rectangle, Circle, Polygon, Push/Pull, Offset, Move (with copy and arrays), Rotate (15° snaps), Scale (grips, typed factors or sizes, mirror), Tape Measure (guide lines and points), Dimension, Section Plane, Orbit, Pan, Zoom.
+- **Organize:** Tags (layers) with visibility, Scenes (saved views with tag state, PageUp/PageDown), Outliner, right-click context menu.
 - **Built-in add-ons:**
   - **Lumber:** real dressed sizes (a 2x4 is 1½" × 3½"), plywood and MDF sheets.
   - **Steel Profiles:** square, rectangular and round tube, angle, channel, flat bar, round bar, by gauge.
@@ -55,6 +56,8 @@ npm run tauri build  # make an installer (.dmg/.app on macOS, .msi/.exe on Windo
 | Push/pull it up, type `3/4`, Enter | **P** |
 | Select all, make a group | **⌘/Ctrl+A**, **⌘/Ctrl+G** |
 | Move it; tap **Option/Ctrl** to copy, then type `x4` | **M** |
+| Make a reusable component | **G** |
+| Inset a face / stretch with grips | **F** / **S** |
 | Orbit / pan / zoom | middle-drag (or Option/Alt-drag) / right-drag / scroll |
 | Zoom to fit | **Shift+Z** |
 | All shortcuts | **Help → Keyboard Shortcuts** |

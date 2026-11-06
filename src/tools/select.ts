@@ -38,7 +38,7 @@ function setHover(app: App, p: Picked | null): void {
 }
 
 /** All faces and edges connected to a starting face/edge through shared edges. */
-function connected(app: App, start: Picked): { faces: number[]; edges: string[] } {
+export function connected(app: App, start: Picked): { faces: number[]; edges: string[] } {
   const mesh = app.context.mesh;
   const faces = new Set<number>();
   const edges = new Set<string>();
@@ -137,6 +137,15 @@ export class SelectTool implements Tool {
     if (c.n === 2) return; // handled by doubleClick
     const sel = app.selection;
     if (!p) {
+      const item = app.pickItem(e.x, e.y);
+      if (item !== null) {
+        if (e.shift) {
+          if (app.selectedItems.has(item)) app.selectedItems.delete(item);
+          else app.selectedItems.add(item);
+          app.setSelection({ ...sel, items: app.selectedItems });
+        } else app.setSelection({ items: [item] });
+        return;
+      }
       if (!e.shift) app.clearSelection();
       return;
     }

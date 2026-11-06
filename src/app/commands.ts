@@ -2,6 +2,8 @@ import { exportOBJ, exportSTL } from '../core/export';
 import { App, isMac } from './app';
 import { FileTarget, openFile, saveFile, store } from './platform';
 import { dialog, form } from '../ui/dialogs';
+import { connected } from '../tools/select';
+import { Group } from '../core/document';
 import { AddOnManager } from '../plugins/api';
 
 const MODEL_FILTER = [{ name: 'Workbench3D model', extensions: ['wb3d'] }];
@@ -130,13 +132,19 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       label: 'Delete',
       menu: 'Edit',
       shortcut: 'Delete',
+      context: true,
       enabled: () => !app.selectionEmpty(),
       run: () => {
         const sel = app.selection;
         const groups = app.selectedGroups();
+        const items = app.selectedItems;
         app.doc.transact('Delete', () => {
           app.context.mesh.erase(sel.faces, sel.edges);
           for (const g of groups) g.parent?.remove(g);
+          app.doc.guides = app.doc.guides.filter((x) => !items.has(x.id));
+          app.doc.dimensions = app.doc.dimensions.filter((x) => !items.has(x.id));
+          app.doc.sections = app.doc.sections.filter((x) => !items.has(x.id));
+          app.doc.purgeComponents();
         });
         app.clearSelection();
       },
@@ -147,26 +155,74 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       menu: 'Edit',
       shortcut: 'Mod+G',
       separatorBefore: true,
-      enabled: () => !app.selectionEmpty(),
+      context: true,
+      enabled: () => hasGeometrySelection(),
       run: () => {
-        const sel = app.selection;
-        const mesh = app.context.mesh;
-        // grouping faces brings their edges along; grouping just edges brings faces they bound
-        const faces = new Set(sel.faces);
-        const edges = new Set(sel.edges);
-        for (const id of faces) {
-          const f = mesh.faces.get(id);
-          if (f) for (const k of mesh.faceEdgeKeys(f)) edges.add(k);
-        }
-        const groups = app.selectedGroups();
-        const g = app.doc.transact('Make Group', () => app.doc.makeGroup(app.context, [...faces], [...edges].filter((k) => mesh.lines.has(k)), groups));
+        const { faces, edges, groups } = groupable();
+        const g = app.doc.transact('Make Group', () => app.doc.makeGroup(app.context, faces, edges, groups));
         app.setSelection({ groups: [g.id] });
       },
     },
     {
-      id: 'edit.explode',
-      label: 'Explode Group',
+      id: 'edit.component',
+      label: 'Make Component…',
       menu: 'Edit',
+      shortcut: 'G',
+      context: true,
+      enabled: () => hasGeometrySelection(),
+      run: async () => {
+        const v = await form(
+          'Make component',
+          [
+            { name: 'name', label: 'Name', type: 'text', value: 'Component' },
+            { name: 'description', label: 'Description', type: 'text', value: '' },
+          ],
+          app.doc.units,
+          'Create',
+        );
+        if (!v) return;
+        const name = String(v.name).trim() || 'Component';
+        const sel = groupable();
+        const g = app.doc.transact('Make Component', () => {
+          // a single selected group becomes the component as-is
+          const one = sel.groups.length === 1 && !sel.faces.length && !sel.edges.length ? sel.groups[0] : null;
+          if (one) {
+            const def = app.doc.groupToComponent(one);
+            def.name = name;
+            def.description = String(v.description || '') || undefined;
+            one.name = name;
+            return one;
+          }
+          const c = app.doc.makeComponent(app.context, sel.faces, sel.edges, sel.groups, name);
+          const def = app.doc.component(c.componentId)!;
+          if (v.description) def.description = String(v.description);
+          return c;
+        });
+        app.setSelection({ groups: [g.id] });
+      },
+    },
+    {
+      id: 'edit.makeUnique',
+      label: 'Make Unique',
+      menu: 'Edit',
+      context: true,
+      enabled: () => app.selectedGroups().some((g) => g.componentId != null && app.doc.instances(g.componentId).length > 1),
+      run: () => {
+        const ids = app.selectedGroups().map((g) => g.id);
+        app.doc.transact('Make Unique', () => {
+          for (const id of ids) {
+            const g = app.doc.findGroup(id);
+            if (g) app.doc.makeUnique(g);
+          }
+        });
+        app.emit('selection');
+      },
+    },
+    {
+      id: 'edit.explode',
+      label: 'Explode',
+      menu: 'Edit',
+      context: true,
       enabled: () => app.selection.groups.size > 0,
       run: () => {
         const groups = app.selectedGroups();
@@ -174,6 +230,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         app.doc.transact('Explode', () => {
           for (const g of groups) {
             const r = app.doc.explode(g);
+            app.doc.purgeComponents();
             sel.faces.push(...r.faces);
             sel.edges.push(...r.lines);
             sel.groups.push(...r.groups.map((x) => x.id));
@@ -186,15 +243,17 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       id: 'edit.editGroup',
       label: 'Edit Group',
       menu: 'Edit',
+      context: true,
       enabled: () => app.selection.groups.size === 1,
       run: () => app.enterGroup([...app.selection.groups][0]),
     },
-    { id: 'edit.closeGroup', label: 'Close Group', menu: 'Edit', enabled: () => app.context !== app.doc.root, run: () => app.exitGroup() },
+    { id: 'edit.closeGroup', label: 'Close Group', menu: 'Edit', context: true, enabled: () => app.context !== app.doc.root, run: () => app.exitGroup() },
     {
       id: 'edit.hide',
       label: 'Hide',
       menu: 'Edit',
       separatorBefore: true,
+      context: true,
       enabled: () => app.selection.groups.size > 0,
       run: () => {
         const ids = [...app.selection.groups];
@@ -207,6 +266,43 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       label: 'Unhide All',
       menu: 'Edit',
       run: () => app.doc.transact('Unhide All', () => [...app.doc.root.walk()].forEach((g) => (g.hidden = false))),
+    },
+    {
+      id: 'edit.reverseFaces',
+      label: 'Reverse Faces',
+      menu: 'Edit',
+      context: true,
+      enabled: () => app.selection.faces.size > 0,
+      run: () => {
+        const ids = [...app.selection.faces];
+        app.doc.transact('Reverse Faces', () => {
+          for (const id of ids) {
+            const f = app.context.mesh.faces.get(id);
+            if (f) app.context.mesh.reverseFace(f);
+          }
+        });
+      },
+    },
+    {
+      id: 'edit.selectConnected',
+      label: 'Select All Connected',
+      menu: 'Edit',
+      context: true,
+      enabled: () => app.selection.faces.size > 0 || app.selection.edges.size > 0,
+      run: () => {
+        const startFace = [...app.selection.faces][0];
+        const start = startFace !== undefined ? { kind: 'face' as const, id: startFace } : { kind: 'edge' as const, id: [...app.selection.edges][0] };
+        const r = connected(app, start);
+        app.setSelection({ faces: r.faces, edges: r.edges });
+      },
+    },
+    {
+      id: 'view.zoomSelection',
+      label: 'Zoom Selection',
+      menu: 'View',
+      context: true,
+      enabled: () => !app.selectionEmpty(),
+      run: () => app.vp.zoomExtents(selectionBounds()),
     },
     // ----- View
     { id: 'view.extents', label: 'Zoom Extents', menu: 'View', shortcut: 'Shift+Z', run: () => app.vp.zoomExtents(app.modelBounds()) },
@@ -240,6 +336,89 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       },
     },
     { id: 'view.grid', label: 'Toggle Grid', menu: 'View', run: () => app.vp.setGridVisible(!app.vp.showGrid) },
+    {
+      id: 'view.sectionCut',
+      label: 'Toggle Section Cut',
+      menu: 'View',
+      separatorBefore: true,
+      enabled: () => app.doc.sections.length > 0,
+      run: () => {
+        const active = app.doc.sections.find((x) => x.active);
+        const sel = app.doc.sections.find((x) => app.selectedItems.has(x.id));
+        app.doc.transact('Section Cut', () => {
+          if (active) active.active = false;
+          else {
+            const target = sel ?? app.doc.sections[app.doc.sections.length - 1];
+            target.active = true;
+          }
+        });
+      },
+    },
+    {
+      id: 'view.sectionPlanes',
+      label: 'Toggle Section Planes',
+      menu: 'View',
+      run: () => {
+        app.showSectionPlanes = !app.showSectionPlanes;
+        app.refresh();
+      },
+    },
+    {
+      id: 'section.activate',
+      label: 'Activate Section Cut',
+      menu: 'View',
+      context: true,
+      enabled: () => app.doc.sections.some((x) => app.selectedItems.has(x.id) && !x.active),
+      run: () => {
+        const id = app.doc.sections.find((x) => app.selectedItems.has(x.id))!.id;
+        app.doc.transact('Section Cut', () => app.doc.sections.forEach((x) => (x.active = x.id === id)));
+      },
+    },
+    {
+      id: 'edit.deleteGuides',
+      label: 'Delete All Guides',
+      menu: 'Edit',
+      enabled: () => app.doc.guides.length > 0,
+      run: () => app.doc.transact('Delete Guides', () => (app.doc.guides = [])),
+    },
+    {
+      id: 'scene.add',
+      label: 'Add Scene',
+      menu: 'View',
+      separatorBefore: true,
+      run: () => {
+        const name = `Scene ${app.doc.scenes.length + 1}`;
+        app.doc.transact('Add Scene', () => app.doc.scenes.push(app.captureScene(name)));
+        app.activeScene = app.doc.scenes.length - 1;
+        app.emit('change');
+      },
+    },
+    {
+      id: 'scene.update',
+      label: 'Update Scene',
+      menu: 'View',
+      enabled: () => app.activeScene >= 0 && app.activeScene < app.doc.scenes.length,
+      run: () => {
+        const i = app.activeScene;
+        app.doc.transact('Update Scene', () => (app.doc.scenes[i] = app.captureScene(app.doc.scenes[i].name)));
+      },
+    },
+    {
+      id: 'scene.next',
+      label: 'Next Scene',
+      menu: 'View',
+      shortcut: 'PageDown',
+      enabled: () => app.doc.scenes.length > 0,
+      run: () => app.goToScene((app.activeScene + 1) % app.doc.scenes.length),
+    },
+    {
+      id: 'scene.prev',
+      label: 'Previous Scene',
+      menu: 'View',
+      shortcut: 'PageUp',
+      enabled: () => app.doc.scenes.length > 0,
+      run: () => app.goToScene((app.activeScene - 1 + app.doc.scenes.length) % app.doc.scenes.length),
+    },
     // ----- Window / settings
     {
       id: 'model.units',
@@ -312,6 +491,32 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     },
   ];
   for (const c of cmds) app.registerCommand(c);
+
+  function hasGeometrySelection(): boolean {
+    const s = app.selection;
+    return s.faces.size > 0 || s.edges.size > 0 || s.groups.size > 0;
+  }
+
+  /** The selection as group-able pieces: faces bring their edges along. */
+  function groupable(): { faces: number[]; edges: string[]; groups: Group[] } {
+    const sel = app.selection;
+    const mesh = app.context.mesh;
+    const edges = new Set(sel.edges);
+    for (const id of sel.faces) {
+      const f = mesh.faces.get(id);
+      if (f) for (const k of mesh.faceEdgeKeys(f)) edges.add(k);
+    }
+    return { faces: [...sel.faces], edges: [...edges].filter((k) => mesh.lines.has(k)), groups: app.selectedGroups() };
+  }
+
+  function selectionBounds() {
+    const ctx = app.context;
+    const m = ctx.worldMatrix();
+    const box = ctx.mesh.bounds().makeEmpty();
+    for (const v of ctx.mesh.verticesOf(app.selection.faces, app.selection.edges)) box.expandByPoint(ctx.mesh.v(v).clone().applyMatrix4(m));
+    for (const g of app.selectedGroups()) box.union(g.worldBounds());
+    return box.isEmpty() ? app.modelBounds() : box;
+  }
 
   // keep an autosave so a closed tab or crash doesn't lose work
   let timer = 0;

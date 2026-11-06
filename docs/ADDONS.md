@@ -50,7 +50,7 @@ Axes: **red = X**, **green = Y**, **blue = Z (up)**.
 | `api.transact(label, fn)` | Run `fn` as one undo step. If it throws, the change is rolled back. **Wrap every model change in this.** |
 | `api.createBox(opts)` | A rectangular solid in its own group. `width` (red), `depth` (green), `height` (blue), `origin`, `name`, `color`, `attributes`, `parent`. |
 | `api.createExtrusion(opts)` | A 2D `profile` (with optional `holes`) pushed to `length` along `axis` (`'x'`, `'y'` or `'z'`). Ideal for tube, trim, extrusions. |
-| `api.registerCommand({ id, label, menu?, shortcut?, run, enabled? })` | Adds a menu item. Default menu is **Add-ons**. Shortcuts look like `"Mod+Shift+K"` (Mod = ⌘ on Mac, Ctrl elsewhere). |
+| `api.registerCommand({ id, label, menu?, shortcut?, run, enabled?, context? })` | Adds a menu item. Default menu is **Add-ons**. Shortcuts look like `"Mod+Shift+K"` (Mod = ⌘ on Mac, Ctrl elsewhere). `context: true` also shows it in the right-click menu whenever `enabled()` returns true. |
 | `api.registerTool(tool)` | Adds a toolbar tool. See below. |
 | `api.ui.form(title, fields, submitLabel?)` | Shows a form, resolves with values or `null` if cancelled. Field types: `length`, `number`, `text`, `select`, `checkbox`, `color`. |
 | `api.ui.dialog(title, htmlOrElement, buttons?)` | A simple modal. Resolves with the clicked button's label. |
@@ -59,6 +59,12 @@ Axes: **red = X**, **green = Y**, **blue = Z (up)**.
 | `api.on('change' \| 'selection', fn)` | Subscribe; returns an unsubscribe function. |
 | `api.storage.get/set(key, value)` | Persistent per-add-on settings. |
 | `api.icons` | The built-in toolbar icons (SVG strings). |
+
+### Components, tags and other model data
+
+- `api.doc.makeComponent(context, faceIds, edgeKeys, groups, name)` / `api.doc.groupToComponent(group)` turn geometry or a group into a component; `api.doc.instances(componentId)` lists its copies. Copy an instance with `api.doc.duplicateGroup(g)`; edits made inside any instance are mirrored to the others.
+- `group.tag = 'Cabinets'` puts a part on a tag (add `{ name, visible }` to `api.doc.tags` first).
+- `api.doc.guides`, `api.doc.dimensions`, `api.doc.sections` and `api.doc.scenes` are plain arrays of JSON objects (see `src/core/document.ts`); change them inside `api.transact`.
 
 ### Groups and attributes
 
