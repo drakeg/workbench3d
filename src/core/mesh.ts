@@ -541,6 +541,23 @@ export class Mesh {
     }
   }
 
+  // ---------- offset ----------
+
+  /**
+   * Offset a face's outline by d (positive = inward). Inward offsets become a hole + inner
+   * face (so the inner part can be push/pulled); outward offsets add a ring around the face.
+   * Returns the new face, or null if the offset collapses the outline.
+   */
+  offsetFace(faceId: number, d: number): Face | null {
+    const face = this.faces.get(faceId);
+    if (!face || Math.abs(d) < 1e-9) return null;
+    const pts = offsetLoop(this.loopPoints(face.outer), this.normal(face), d);
+    if (!pts) return null;
+    if (d > 0) return this.addPolygon(pts);
+    const ids = pts.map((p) => this.newVertex(p));
+    return this.addFace(ids, [[...face.outer].reverse()], face.color);
+  }
+
   // ---------- copy / split / merge ----------
 
   /** Copy faces and lines into a new mesh (same coordinates). */
@@ -666,6 +683,51 @@ export class Mesh {
   clone(): Mesh {
     return Mesh.fromJSON(this.toJSON());
   }
+}
+
+/**
+ * Offset a planar loop (counter-clockwise around n) by d: positive moves every edge inward.
+ * Returns null if the result folds over itself.
+ */
+export function offsetLoop(pts: Vector3[], n: Vector3, d: number): Vector3[] | null {
+  const N = pts.length;
+  // drop collinear points so parallel neighbours don't produce degenerate intersections
+  const clean: Vector3[] = [];
+  for (let i = 0; i < N; i++) {
+    const p = pts[(i - 1 + N) % N];
+    const c = pts[i];
+    const q = pts[(i + 1) % N];
+    if (c.clone().sub(p).cross(q.clone().sub(c)).length() > 1e-9 * Math.max(1, c.distanceTo(p) * q.distanceTo(c))) clean.push(c);
+  }
+  if (clean.length < 3) return null;
+  const M = clean.length;
+  const lines = clean.map((a, i) => {
+    const b = clean[(i + 1) % M];
+    const dir = b.clone().sub(a).normalize();
+    const inward = n.clone().cross(dir).normalize(); // left of the edge = inside for CCW loops
+    return { p: a.clone().add(inward.multiplyScalar(d)), dir };
+  });
+  const out: Vector3[] = [];
+  for (let i = 0; i < M; i++) {
+    const L1 = lines[(i - 1 + M) % M];
+    const L2 = lines[i];
+    // intersect L1 and L2 (coplanar): solve L1.p + t L1.dir = L2.p + s L2.dir
+    const w = L2.p.clone().sub(L1.p);
+    const cross = L1.dir.clone().cross(L2.dir);
+    const den = cross.lengthSq();
+    if (den < 1e-12) {
+      out.push(L2.p.clone());
+      continue;
+    }
+    const t = w.clone().cross(L2.dir).dot(cross) / den;
+    out.push(L1.p.clone().add(L1.dir.clone().multiplyScalar(t)));
+  }
+  // reject folded results: every offset edge must keep its direction
+  for (let i = 0; i < M; i++) {
+    const e = out[(i + 1) % M].clone().sub(out[i]);
+    if (e.dot(lines[i].dir) <= 1e-9) return null;
+  }
+  return out;
 }
 
 function round(x: number): number {

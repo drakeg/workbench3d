@@ -480,68 +480,6 @@ export class RotateTool implements Tool {
   }
 }
 
-// ---------------------------------------------------------------- Tape measure
-
-export class TapeTool implements Tool {
-  id = 'tape';
-  name = 'Tape Measure';
-  icon = icons.tape;
-  shortcut = 'T';
-  vcbLabel = 'Length';
-  hint = 'Click two points to measure the distance between them.';
-  private a: THREE.Vector3 | null = null;
-  private done = false;
-  private lock: Axis | null = null;
-
-  pointerMove(e: ToolEvent, app: App): void {
-    if (this.done) return;
-    const inf = app.infer(e, this.a ? { from: this.a, lockAxis: this.lock } : {});
-    app.showInference(inf);
-    if (!this.a) return;
-    this.show(app, inf.point);
-  }
-
-  private show(app: App, b: THREE.Vector3): void {
-    const a = this.a!;
-    app.vp.clearOverlay();
-    app.vp.overlayLines([a.x, a.y, a.z, b.x, b.y, b.z], lineColor(a, b), 2, true);
-    const d = b.clone().sub(a);
-    app.setVCB(app.fmt(d.length()));
-    app.setHint(`Δ red ${app.fmt(Math.abs(d.x))}   Δ green ${app.fmt(Math.abs(d.y))}   Δ blue ${app.fmt(Math.abs(d.z))}`);
-  }
-
-  pointerDown(e: ToolEvent, app: App): void {
-    if (this.done) {
-      this.done = false;
-      this.a = null;
-      app.vp.clearOverlay();
-    }
-    const inf = app.infer(e, this.a ? { from: this.a, lockAxis: this.lock } : {});
-    if (!this.a) {
-      this.a = inf.point.clone();
-      return;
-    }
-    this.show(app, inf.point);
-    this.done = true;
-    this.lock = null;
-  }
-
-  keyDown(e: KeyboardEvent): boolean {
-    const a = axisFromKey(e, this.lock);
-    if (a === undefined) return false;
-    this.lock = a;
-    return true;
-  }
-
-  cancel(app: App): void {
-    if (!this.a) return app.escapeDefault();
-    this.a = null;
-    this.done = false;
-    app.vp.clearOverlay();
-    app.setHint(this.hint);
-  }
-}
-
 // ---------------------------------------------------------------- camera tools
 
 export const OrbitTool: Tool = {

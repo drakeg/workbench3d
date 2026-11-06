@@ -329,5 +329,188 @@ await page.keyboard.press(`${MOD}+z`);
 s = await state();
 check('undo brings it back', s.groups === 1, s);
 
+// ---------- part 5: v0.2 tools ----------
+const reset = () =>
+  page.evaluate(() => {
+    const a = window.workbench;
+    a.doc.clear();
+    a.setTool('select');
+    a.vp.setStandardView('iso', a.modelBounds());
+  });
+const drag = async (fromW, toW, typed) => {
+  let q = await proj(...fromW);
+  await page.mouse.move(q[0], q[1]);
+  await page.mouse.click(q[0], q[1]);
+  q = await proj(...toW);
+  await page.mouse.move(q[0], q[1]);
+  if (typed) {
+    await page.keyboard.type(typed);
+    await page.keyboard.press('Enter');
+  }
+};
+const makeBox = async (w, d, h) => {
+  await page.keyboard.press('r');
+  await drag([0, 0, 0], [w * 0.8, d * 0.8, 0], `${w},${d}`);
+  await page.keyboard.press('Shift+Z');
+  await page.keyboard.press('p');
+  let q = await proj(w / 2, d / 2, 0);
+  await page.mouse.move(q[0], q[1]);
+  await page.mouse.click(q[0], q[1]);
+  await page.mouse.move(q[0], q[1] - 60);
+  await page.keyboard.type(String(h));
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Shift+Z');
+};
+
+// Offset: inset the top of a box by 2, push the inner face down 1
+await reset();
+await makeBox(20, 20, 4);
+await page.keyboard.press('f');
+await drag([10, 0.5, 4], [10, 6, 4], '2');
+s = await state();
+check('offset inset the top face', s.faces === 7, s);
+await page.keyboard.press('p');
+await drag([10, 10, 4], [10, 10, 2], '1');
+check('push/pull the offset face into a tray', Math.abs((await volume()) - (1600 - 16 * 16)) < 0.01, await volume());
+
+// Arc on the ground: 2-point arc with a typed bulge
+await reset();
+await page.keyboard.press('a');
+await drag([0, 0, 0], [10, 0, 0]);
+let q = await proj(10, 0, 0);
+await page.mouse.click(q[0], q[1]);
+q = await proj(5, 3, 0);
+await page.mouse.move(q[0], q[1]);
+await page.keyboard.type('5');
+await page.keyboard.press('Enter');
+const arcEdges = await page.evaluate(() => window.workbench.doc.root.mesh.lines.size);
+check('arc made 12 edges (half circle)', arcEdges === 12, arcEdges);
+// close it with a line: the half-disc becomes a face
+await page.keyboard.press('l');
+await drag([0, 0, 0], [10, 0, 0]);
+q = await proj(10, 0, 0);
+await page.mouse.click(q[0], q[1]);
+await page.keyboard.press('Escape');
+const halfDisc = await page.evaluate(() => {
+  const m = window.workbench.doc.root.mesh;
+  return [...m.faces.values()].map((f) => +m.area(f).toFixed(2));
+});
+check('arc + chord closes into a face', halfDisc.length === 1 && Math.abs(halfDisc[0] - 39.06) < 0.3, halfDisc);
+
+// Scale: stretch a grouped box along red to 30" by typing a size
+await reset();
+await makeBox(10, 10, 10);
+await page.keyboard.press(`${MOD}+a`);
+await page.keyboard.press(`${MOD}+g`);
+await page.keyboard.press('s');
+await page.waitForTimeout(100);
+q = await proj(10, 5, 5); // +X face-centre grip
+await page.mouse.move(q[0], q[1]);
+await page.mouse.click(q[0], q[1]);
+const q2 = await proj(14, 5, 5);
+await page.mouse.move(q2[0], q2[1]);
+await page.keyboard.type('30"');
+await page.keyboard.press('Enter');
+const scaled = await page.evaluate(() => {
+  const g = window.workbench.doc.root.children[0];
+  const s = g.localBounds().getSize(new (window.workbench.vp.target.constructor)());
+  return [s.x, s.y, s.z].map((v) => +v.toFixed(3));
+});
+check('scale to 30" along red (baked into the group)', scaled[0] === 30 && scaled[1] === 10 && scaled[2] === 10, scaled);
+
+// Components: make one, copy it, edit inside one -> the copy changes too
+await page.keyboard.press(' ');
+await page.evaluate(() => window.workbench.setSelection({ groups: [window.workbench.doc.root.children[0].id] }));
+await page.keyboard.press('g');
+await page.waitForSelector('.modal form');
+await page.fill('.modal input[type=text]', 'Block');
+await page.click('.modal-footer button.primary');
+await page.waitForTimeout(100);
+await page.keyboard.press('m');
+await page.keyboard.press(process.platform === 'darwin' ? 'Alt' : 'Control');
+await drag([0, 0, 0], [0, 30, 0], '40');
+s = await state();
+const comp = await page.evaluate(() => window.workbench.doc.root.children.map((g) => g.componentId));
+check('component copied', s.groups === 2 && comp[0] != null && comp[0] === comp[1], { s, comp });
+await page.keyboard.press('Escape');
+await page.keyboard.press(' ');
+await page.evaluate(() => window.workbench.enterGroup(window.workbench.doc.root.children[0].id));
+await page.keyboard.press('p');
+await drag([15, 5, 10], [15, 5, 14], '2');
+await page.keyboard.press('Escape');
+await page.keyboard.press('Escape');
+const heights = await page.evaluate(() => window.workbench.doc.root.children.map((g) => +g.localBounds().getSize(new (window.workbench.vp.target.constructor)()).z.toFixed(3)));
+check('editing one instance updates the other', heights[0] === 12 && heights[1] === 12, heights);
+await page.screenshot({ path: `${out}/components.png` });
+
+// Right-click context menu on a group
+q = await proj(5, 45, 6);
+await page.mouse.click(q[0], q[1], { button: 'right' });
+await page.waitForSelector('.context-menu');
+const menuItems = await page.$$eval('.context-menu .menu-item span', (els) => els.map((e) => e.textContent));
+check('context menu offers Make Unique and Explode', menuItems.includes('Make Unique') && menuItems.includes('Explode'), menuItems);
+await page.click('.context-menu .menu-item:has-text("Make Unique")');
+const comps = await page.evaluate(() => new Set(window.workbench.doc.root.children.map((g) => g.componentId)).size);
+check('make unique gives the copy its own definition', comps === 2, comps);
+
+// Tags: tag the second block, hide the tag
+await page.evaluate(() => {
+  const a = window.workbench;
+  a.doc.transact('Tag', () => {
+    a.doc.tags.push({ name: 'Blocks', visible: true });
+    a.doc.root.children[1].tag = 'Blocks';
+  });
+  a.doc.transact('Hide Tag', () => (a.doc.tags[0].visible = false));
+});
+const hiddenHit = await page.evaluate(([x, y]) => {
+  const a = window.workbench;
+  const r = a.vp.dom.getBoundingClientRect();
+  return !!a.vp.raycastFaces(a.vp.ray(x - r.left, y - r.top));
+}, q);
+check('hidden tag removes the part from view and picking', hiddenHit === false, hiddenHit);
+
+// Scenes: save, move the camera, go back
+await page.evaluate(() => window.workbench.runCommand('scene.add'));
+const cam0 = await page.evaluate(() => window.workbench.vp.persp.position.toArray().map((v) => +v.toFixed(2)));
+await page.evaluate(() => {
+  const a = window.workbench;
+  a.doc.tags[0].visible = true;
+  a.vp.setStandardView('top', a.modelBounds());
+});
+await page.click('.scene-tabs button');
+await page.waitForTimeout(700);
+const cam1 = await page.evaluate(() => window.workbench.vp.persp.position.toArray().map((v) => +v.toFixed(2)));
+const tagBack = await page.evaluate(() => window.workbench.doc.tags[0].visible);
+check('scene restores camera and tag visibility', JSON.stringify(cam0) === JSON.stringify(cam1) && tagBack === false, { cam0, cam1, tagBack });
+
+// Tape measure guide: parallel guide 3" from an edge; dimension; section plane
+await reset();
+await makeBox(20, 20, 4);
+await page.keyboard.press('t');
+await drag([10, 0, 4], [10, 2, 4], '3');
+const guides = await page.evaluate(() => window.workbench.doc.guides);
+check('tape from an edge places a parallel guide 3" away', guides.length === 1 && Math.abs(guides[0].point[1] - 3) < 1e-3 && Math.abs(guides[0].dir[0]) === 1, guides);
+await page.evaluate(() => window.workbench.setTool('dimension'));
+q = await proj(6, 0, 0);
+await page.mouse.move(q[0], q[1]);
+await page.mouse.click(q[0], q[1]); // on the front-bottom edge
+q = await proj(6, -6, 0);
+await page.mouse.move(q[0], q[1]);
+await page.mouse.click(q[0], q[1]);
+const dimText = await page.$$eval('.dim-label', (els) => els.map((e) => e.textContent));
+check('dimension shows the edge length', dimText.length === 1 && dimText[0] === `1' 8"`, dimText);
+await page.evaluate(() => window.workbench.setTool('section'));
+await drag([10, 0, 2], [10, 5, 2], '10');
+const sec = await page.evaluate(() => {
+  const a = window.workbench;
+  const s = a.doc.sections[0];
+  const r = a.vp.dom.getBoundingClientRect();
+  return { y: +s.point[1].toFixed(3), active: s.active, clipped: !!a.vp.clipPlane };
+});
+check('section plane cuts 10" into the box', sec.y === 10 && sec.active && sec.clipped, sec);
+await page.keyboard.press('Shift+Z');
+await page.waitForTimeout(150);
+await page.screenshot({ path: `${out}/section.png` });
+
 check('no page errors', errors.length === 0, errors);
 await browser.close();

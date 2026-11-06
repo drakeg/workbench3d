@@ -4,7 +4,7 @@ import { formatLength } from '../core/units';
 import { Tool, ToolEvent } from '../tools/tool';
 import { Navigation } from './navigation';
 import { Inference, InferOptions, infer } from './inference';
-import { Viewport, isHidden } from './viewport';
+import { Viewport, isHidden, setHiddenTags } from './viewport';
 
 export interface Command {
   id: string;
@@ -17,6 +17,8 @@ export interface Command {
   enabled?: () => boolean;
   /** Visual separator before this item in its menu. */
   separatorBefore?: boolean;
+  /** Also show in the right-click menu when enabled. */
+  context?: boolean;
 }
 
 export interface Selection {
@@ -53,6 +55,7 @@ export class App {
   fileName = 'Untitled';
   private listeners = new Map<AppEvent, Set<() => void>>();
   private navActive = false;
+  private navDown: { x: number; y: number; button: number } | null = null;
   private marker: HTMLDivElement;
   private markerLabel: HTMLDivElement;
   private lastPointer = { x: 0, y: 0 };
@@ -71,6 +74,7 @@ export class App {
     container.append(this.marker, this.markerLabel);
 
     this.doc.onChange(() => {
+      this.syncComponents();
       this.pruneSelection();
       this.refresh();
       this.emit('change');
@@ -117,6 +121,7 @@ export class App {
 
   clearSelection(emit = true): void {
     this.selection = { faces: new Set(), edges: new Set(), groups: new Set() };
+    this.selectedItems = new Set();
     if (emit) {
       this.refresh();
       this.emit('selection');
@@ -125,19 +130,20 @@ export class App {
 
   selectionEmpty(): boolean {
     const s = this.selection;
-    return !s.faces.size && !s.edges.size && !s.groups.size;
+    return !s.faces.size && !s.edges.size && !s.groups.size && !this.selectedItems.size;
   }
 
   selectedGroups(): Group[] {
     return [...this.selection.groups].map((id) => this.doc.findGroup(id)).filter((g): g is Group => !!g);
   }
 
-  setSelection(sel: { faces?: Iterable<number>; edges?: Iterable<string>; groups?: Iterable<number> }): void {
+  setSelection(sel: { faces?: Iterable<number>; edges?: Iterable<string>; groups?: Iterable<number>; items?: Iterable<number> }): void {
     this.selection = {
       faces: new Set(sel.faces ?? []),
       edges: new Set(sel.edges ?? []),
       groups: new Set(sel.groups ?? []),
     };
+    this.selectedItems = new Set(sel.items ?? []);
     this.refresh();
     this.emit('selection');
   }
@@ -149,6 +155,13 @@ export class App {
     for (const id of [...this.selection.faces]) if (!ctx.mesh.faces.has(id)) this.selection.faces.delete(id);
     for (const k of [...this.selection.edges]) if (!edges.has(k)) this.selection.edges.delete(k);
     for (const id of [...this.selection.groups]) if (!ctx.children.some((c) => c.id === id)) this.selection.groups.delete(id);
+    const items = new Set([...this.doc.guides, ...this.doc.dimensions, ...this.doc.sections].map((x) => x.id));
+    for (const id of [...this.selectedItems]) if (!items.has(id)) this.selectedItems.delete(id);
+  }
+
+  /** While editing inside a component instance, mirror the edit into every other instance. */
+  syncComponents(): void {
+    for (let g: Group | null = this.doc.findGroup(this.contextId) ?? null; g; g = g.parent) if (g.componentId != null) this.doc.syncComponent(g);
   }
 
   /** Which selectable thing in the current context a group's geometry belongs to. */
@@ -157,6 +170,57 @@ export class App {
     if (g === ctx) return { kind: 'raw' };
     for (let p: Group | null = g; p; p = p.parent) if (p.parent === ctx) return { kind: 'group', group: p };
     return null;
+  }
+
+  /** A guide, dimension or section plane near the cursor (these live at model level). */
+  pickItem(x: number, y: number, px = 6): number | null {
+    const mouse = new THREE.Vector2(x, y);
+    let best: { d: number; id: number } | null = null;
+    const consider = (id: number, a: THREE.Vector3, b: THREE.Vector3) => {
+      const sa = this.vp.project(a);
+      const sb = this.vp.project(b);
+      if (sa.behind && sb.behind) return;
+      const A = new THREE.Vector2(sa.x, sa.y);
+      const AB = new THREE.Vector2(sb.x, sb.y).sub(A);
+      const t = Math.max(0, Math.min(1, mouse.clone().sub(A).dot(AB) / Math.max(AB.lengthSq(), 1e-9)));
+      const d = A.add(AB.multiplyScalar(t)).distanceTo(mouse);
+      if (d < px && (!best || d < best.d)) best = { d, id };
+    };
+    for (const g of this.guideList()) {
+      if (g.dir) {
+        // clip the infinite guide to a long segment around the camera target
+        const t = this.vp.target.clone().sub(g.point).dot(g.dir);
+        const c = g.point.clone().add(g.dir.clone().multiplyScalar(t));
+        const span = this.vp.persp.position.distanceTo(this.vp.target) * 4;
+        consider(g.id, c.clone().addScaledVector(g.dir, -span), c.clone().addScaledVector(g.dir, span));
+      } else consider(g.id, g.point, g.point);
+    }
+    for (const d of this.doc.dimensions) {
+      const a = new THREE.Vector3(...d.a).add(new THREE.Vector3(...d.offset));
+      const b = new THREE.Vector3(...d.b).add(new THREE.Vector3(...d.offset));
+      consider(d.id, a, b);
+    }
+    // dimension labels are HTML; hit-test them directly
+    const r = this.vp.dom.getBoundingClientRect();
+    for (const el of this.container.querySelectorAll<HTMLElement>('.dim-label')) {
+      const b = el.getBoundingClientRect();
+      const cx = x + r.left;
+      const cy = y + r.top;
+      if (cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom) return Number(el.dataset.id);
+    }
+    if (this.showSectionPlanes) {
+      for (const s of this.doc.sections) {
+        const p = new THREE.Vector3(...s.point);
+        const n = new THREE.Vector3(...s.normal);
+        const ref = Math.abs(n.z) < 0.9 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+        const size = this.sectionSize();
+        const u = new THREE.Vector3().crossVectors(ref, n).normalize().multiplyScalar(size);
+        const v = new THREE.Vector3().crossVectors(n, u).normalize().multiplyScalar(size);
+        const c = [u.clone().negate().sub(v), u.clone().sub(v), u.clone().add(v), u.clone().negate().add(v)].map((o) => p.clone().add(o));
+        for (let i = 0; i < 4; i++) consider(s.id, c[i], c[(i + 1) % 4]);
+      }
+    }
+    return (best as { d: number; id: number } | null)?.id ?? null;
   }
 
   /** Nearest edge of the active context within a few pixels of the cursor. */
@@ -200,13 +264,30 @@ export class App {
 
   // ---------- inference & feedback ----------
 
+  /** Shift-lock: the direction locked while Shift is held. */
+  shiftLock: THREE.Vector3 | null = null;
+  lastInference: Inference | null = null;
+  lastInferenceFrom: THREE.Vector3 | null = null;
+  /** Selected guides, dimensions and section planes (by id). */
+  selectedItems = new Set<number>();
+
   infer(e: { x: number; y: number }, opts: InferOptions = {}): Inference {
-    return infer(e.x, e.y, this.doc.root, this.vp, opts);
+    const o: InferOptions = { ...opts, guides: this.guideList() };
+    if (this.shiftLock && o.from && !o.lockAxis && !o.lockDir) o.lockDir = this.shiftLock;
+    const r = infer(e.x, e.y, this.doc.root, this.vp, o);
+    this.lastInference = r;
+    this.lastInferenceFrom = o.from ?? null;
+    return r;
+  }
+
+  guideList(): { point: THREE.Vector3; dir?: THREE.Vector3; id: number }[] {
+    return this.doc.guides.map((g) => ({ id: g.id, point: new THREE.Vector3(...g.point), dir: g.dir ? new THREE.Vector3(...g.dir) : undefined }));
   }
 
   private markerPoint: THREE.Vector3 | null = null;
 
   showInference(inf: Inference | null): void {
+    this.vp.setInferenceGuide(inf?.guide ?? null);
     this.markerPoint = inf && inf.kind !== 'free' ? inf.point.clone() : null;
     if (!inf || !this.markerPoint) {
       this.marker.style.display = 'none';
@@ -251,6 +332,7 @@ export class App {
   // ---------- rendering ----------
 
   refresh(): void {
+    setHiddenTags(new Set(this.doc.tags.filter((t) => !t.visible).map((t) => t.name)));
     this.vp.rebuild({
       root: this.doc.root,
       context: this.context,
@@ -260,7 +342,30 @@ export class App {
       hoverFace: this.hoverFace,
       hoverGroup: this.hoverGroup,
       xray: this.xray,
+      guides: this.guideList(),
+      dimensions: this.doc.dimensions.map((d) => {
+        const a = new THREE.Vector3(...d.a);
+        const b = new THREE.Vector3(...d.b);
+        return { id: d.id, a, b, offset: new THREE.Vector3(...d.offset), text: this.fmt(a.distanceTo(b)) };
+      }),
+      section: (() => {
+        const s = this.doc.sections.find((x) => x.active);
+        return s ? { point: new THREE.Vector3(...s.point), normal: new THREE.Vector3(...s.normal) } : null;
+      })(),
+      sectionOutlines: this.showSectionPlanes
+        ? this.doc.sections.map((x) => ({ id: x.id, active: x.active, point: new THREE.Vector3(...x.point), normal: new THREE.Vector3(...x.normal) }))
+        : [],
+      selectedItems: this.selectedItems,
+      sectionSize: this.sectionSize(),
     });
+  }
+
+  showSectionPlanes = true;
+
+  sectionSize(): number {
+    const b = this.modelBounds();
+    if (b.isEmpty()) return 30;
+    return Math.max(12, b.getSize(new THREE.Vector3()).length() * 0.6);
   }
 
   /**
@@ -274,6 +379,7 @@ export class App {
       apply: (fn: () => void) => {
         this.doc.restore(tx.snapshot);
         fn();
+        this.syncComponents();
         applied = true;
         this.pruneSelection();
         this.refresh();
@@ -369,6 +475,7 @@ export class App {
       const mode = this.nav.wantsPointer(e, this.tool?.navigation ?? null);
       if (mode) {
         this.navActive = true;
+        this.navDown = { x: e.clientX, y: e.clientY, button: e.button };
         this.nav.start(mode, te.x, te.y);
         return;
       }
@@ -388,6 +495,10 @@ export class App {
       if (this.navActive) {
         this.navActive = false;
         this.nav.end();
+        // a right-click without dragging opens the context menu
+        const d = this.navDown;
+        if (d && d.button === 2 && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 4) this.contextMenu?.(e.clientX, e.clientY);
+        this.navDown = null;
         return;
       }
       if (e.button === 0) this.tool?.pointerUp?.(this.toolEvent(e), this);
@@ -399,7 +510,14 @@ export class App {
     dom.addEventListener('pointerleave', () => this.showInference(null));
 
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
-    window.addEventListener('keyup', (e) => this.tool?.keyUp?.(e, this));
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'Shift' && this.shiftLock) {
+        this.shiftLock = null;
+        this.setHint(this.tool?.hint ?? '');
+      }
+      this.tool?.keyUp?.(e, this);
+    });
+    window.addEventListener('blur', () => (this.shiftLock = null));
   }
 
   /** Match a keyboard event against a shortcut string like "Mod+Shift+Z". */
@@ -426,7 +544,9 @@ export class App {
 
     // A bare modifier press (e.g. tapping Ctrl/Option to toggle copy) goes to the tool.
     if (['Control', 'Alt', 'Meta', 'Shift'].includes(e.key)) {
-      if (!e.repeat) this.tool?.keyDown?.(e, this);
+      if (e.repeat) return;
+      if (e.key === 'Shift') this.startShiftLock();
+      this.tool?.keyDown?.(e, this);
       return;
     }
 
@@ -503,10 +623,69 @@ export class App {
     }
   }
 
+  /** Holding Shift locks the direction of the current inference (axis, parallel, or towards a point). */
+  private startShiftLock(): void {
+    const inf = this.lastInference;
+    const from = this.lastInferenceFrom;
+    if (!inf || !from) return;
+    let dir: THREE.Vector3 | null = inf.dir?.clone() ?? null;
+    if (!dir && (inf.kind === 'endpoint' || inf.kind === 'midpoint' || inf.kind === 'on-edge')) dir = inf.point.clone().sub(from);
+    if (!dir || dir.lengthSq() < 1e-10) return;
+    this.shiftLock = dir.normalize();
+    this.setHint('Direction locked while Shift is held.');
+  }
+
+  /** Set by the UI: shows the right-click menu. */
+  contextMenu: ((clientX: number, clientY: number) => void) | null = null;
+
   /** What Escape does when the tool has nothing in progress. */
   escapeDefault(): void {
     if (!this.selectionEmpty()) this.clearSelection();
     else if (this.context !== this.doc.root) this.exitGroup();
+  }
+
+  // ---------- scenes ----------
+
+  /** Capture the current camera, hidden tags and active section as a scene. */
+  captureScene(name: string): import('../core/document').Scene {
+    const active = this.doc.sections.find((x) => x.active);
+    return {
+      name,
+      camera: {
+        position: this.vp.persp.position.toArray() as [number, number, number],
+        target: this.vp.target.toArray() as [number, number, number],
+        perspective: this.vp.perspective,
+      },
+      hiddenTags: this.doc.tags.filter((t) => !t.visible).map((t) => t.name),
+      activeSection: active?.id ?? null,
+    };
+  }
+
+  activeScene = -1;
+
+  /** Go to a scene, animating the camera. Tag and section state switch immediately. */
+  goToScene(index: number): void {
+    const sc = this.doc.scenes[index];
+    if (!sc) return;
+    this.activeScene = index;
+    for (const t of this.doc.tags) t.visible = !sc.hiddenTags.includes(t.name);
+    for (const s of this.doc.sections) s.active = s.id === sc.activeSection;
+    this.vp.perspective = sc.camera.perspective;
+    this.refresh();
+    this.emit('change');
+    const fromP = this.vp.persp.position.clone();
+    const fromT = this.vp.target.clone();
+    const toP = new THREE.Vector3(...sc.camera.position);
+    const toT = new THREE.Vector3(...sc.camera.target);
+    const start = performance.now();
+    const dur = 450;
+    const step = () => {
+      const k = Math.min(1, (performance.now() - start) / dur);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      this.vp.lookAt(fromP.clone().lerp(toP, e), fromT.clone().lerp(toT, e));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
 
   /** Bounds of all visible geometry (for zoom extents). */

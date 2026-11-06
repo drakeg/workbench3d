@@ -1,4 +1,4 @@
-import { Box3, Matrix4, Vector3 } from 'three';
+import { Box3, Matrix4, Quaternion, Vector3 } from 'three';
 import { Mesh, MeshJSON } from './mesh';
 import { UnitSettings, defaultUnits } from './units';
 
@@ -9,6 +9,10 @@ export interface GroupJSON {
   mesh: MeshJSON;
   children: GroupJSON[];
   hidden?: boolean;
+  /** Tag (layer) name; untagged groups are always shown. */
+  tag?: string;
+  /** Groups with the same componentId are instances of one component: editing one edits all. */
+  componentId?: number;
   /** Free-form data for add-ons (e.g. material, species, part number). */
   attributes?: Record<string, unknown>;
 }
@@ -19,6 +23,50 @@ export interface DocumentJSON {
   units: UnitSettings;
   nextGroupId: number;
   root: GroupJSON;
+  guides?: Guide[];
+  dimensions?: Dimension[];
+  tags?: Tag[];
+  scenes?: Scene[];
+  sections?: SectionPlane[];
+  components?: ComponentDef[];
+  nextItemId?: number;
+}
+
+export type V3 = [number, number, number];
+/** A guide line (with dir) or guide point (without), in world space. */
+export interface Guide {
+  id: number;
+  point: V3;
+  dir?: V3;
+}
+/** A linear dimension between two world points, drawn offset by `offset`. */
+export interface Dimension {
+  id: number;
+  a: V3;
+  b: V3;
+  offset: V3;
+}
+export interface Tag {
+  name: string;
+  visible: boolean;
+  color?: string;
+}
+export interface Scene {
+  name: string;
+  camera: { position: V3; target: V3; perspective: boolean };
+  hiddenTags: string[];
+  activeSection?: number | null;
+}
+export interface SectionPlane {
+  id: number;
+  point: V3;
+  normal: V3;
+  active: boolean;
+}
+export interface ComponentDef {
+  id: number;
+  name: string;
+  description?: string;
 }
 
 /** A group is a separate piece of geometry with its own transform; its edges never stick to anything outside it. */
@@ -30,6 +78,8 @@ export class Group {
   children: Group[] = [];
   parent: Group | null = null;
   hidden = false;
+  tag = '';
+  componentId: number | null = null;
   attributes: Record<string, unknown> = {};
 
   constructor(id: number, name = 'Group') {
@@ -85,6 +135,8 @@ export class Group {
       mesh: this.mesh.toJSON(),
       children: this.children.map((c) => c.toJSON()),
       ...(this.hidden ? { hidden: true } : {}),
+      ...(this.tag ? { tag: this.tag } : {}),
+      ...(this.componentId != null ? { componentId: this.componentId } : {}),
       ...(Object.keys(this.attributes).length ? { attributes: structuredClone(this.attributes) } : {}),
     };
   }
@@ -94,6 +146,8 @@ export class Group {
     g.matrix.fromArray(j.matrix);
     g.mesh = Mesh.fromJSON(j.mesh);
     g.hidden = !!j.hidden;
+    g.tag = j.tag ?? '';
+    g.componentId = j.componentId ?? null;
     g.attributes = j.attributes ? structuredClone(j.attributes) : {};
     for (const c of j.children) g.add(Group.fromJSON(c));
     return g;
@@ -114,6 +168,14 @@ export class WorkbenchDocument {
   root = new Group(0, 'Model');
   units: UnitSettings = { ...defaultUnits };
   nextGroupId = 1;
+  guides: Guide[] = [];
+  dimensions: Dimension[] = [];
+  tags: Tag[] = [];
+  scenes: Scene[] = [];
+  sections: SectionPlane[] = [];
+  components: ComponentDef[] = [];
+  /** Shared id counter for guides, dimensions, sections and components. */
+  nextItemId = 1;
   private undoStack: { label: string; state: string }[] = [];
   private redoStack: { label: string; state: string }[] = [];
   private listeners = new Set<() => void>();
@@ -202,7 +264,20 @@ export class WorkbenchDocument {
   }
 
   toJSON(): DocumentJSON {
-    return { format: 'workbench3d', version: 1, units: { ...this.units }, nextGroupId: this.nextGroupId, root: this.root.toJSON() };
+    return {
+      format: 'workbench3d',
+      version: 1,
+      units: { ...this.units },
+      nextGroupId: this.nextGroupId,
+      root: this.root.toJSON(),
+      guides: structuredClone(this.guides),
+      dimensions: structuredClone(this.dimensions),
+      tags: structuredClone(this.tags),
+      scenes: structuredClone(this.scenes),
+      sections: structuredClone(this.sections),
+      components: structuredClone(this.components),
+      nextItemId: this.nextItemId,
+    };
   }
 
   serialize(): string {
@@ -215,6 +290,13 @@ export class WorkbenchDocument {
     this.root = Group.fromJSON(j.root);
     this.units = { ...defaultUnits, ...j.units };
     this.nextGroupId = j.nextGroupId;
+    this.guides = j.guides ? structuredClone(j.guides) : [];
+    this.dimensions = j.dimensions ? structuredClone(j.dimensions) : [];
+    this.tags = j.tags ? structuredClone(j.tags) : [];
+    this.scenes = j.scenes ? structuredClone(j.scenes) : [];
+    this.sections = j.sections ? structuredClone(j.sections) : [];
+    this.components = j.components ? structuredClone(j.components) : [];
+    this.nextItemId = j.nextItemId ?? 1;
   }
 
   /** Load a file, clearing history. */
@@ -229,6 +311,13 @@ export class WorkbenchDocument {
   clear(): void {
     this.root = new Group(0, 'Model');
     this.nextGroupId = 1;
+    this.guides = [];
+    this.dimensions = [];
+    this.tags = [];
+    this.scenes = [];
+    this.sections = [];
+    this.components = [];
+    this.nextItemId = 1;
     this.undoStack = [];
     this.redoStack = [];
     this.dirty = false;
@@ -277,10 +366,122 @@ export class WorkbenchDocument {
     return copy;
   }
 
+  /**
+   * Keep group transforms rigid: after a scale, push the scale into the geometry so sizes
+   * (Entity Info, cut lists) stay true. Negative scales (mirrors) flip faces back outward.
+   */
+  bakeScale(g: Group): void {
+    const pos = new Vector3();
+    const quat = new Quaternion();
+    const scl = new Vector3();
+    g.matrix.decompose(pos, quat, scl);
+    if (Math.abs(scl.x - 1) < 1e-9 && Math.abs(scl.y - 1) < 1e-9 && Math.abs(scl.z - 1) < 1e-9) return;
+    const rigid = new Matrix4().compose(pos, quat, new Vector3(1, 1, 1));
+    let linear = rigid.clone().invert().multiply(g.matrix); // what's left after removing T*R
+    const recomposed = rigid.clone().multiply(new Matrix4().makeScale(scl.x, scl.y, scl.z));
+    let keep = rigid;
+    if (!matricesClose(recomposed, g.matrix)) {
+      // sheared (scaled along axes the group isn't aligned to): bake everything but the translation
+      keep = new Matrix4().makeTranslation(pos.x, pos.y, pos.z);
+      linear = keep.clone().invert().multiply(g.matrix);
+    }
+    g.mesh.applyMatrix(g.mesh.verts.keys(), linear);
+    if (linear.determinant() < 0) for (const f of g.mesh.faces.values()) g.mesh.reverseFace(f);
+    for (const c of g.children) {
+      c.matrix.premultiply(linear);
+      this.bakeScale(c);
+    }
+    g.matrix.copy(keep);
+  }
+
+  // ---------- components ----------
+
+  component(id: number | null | undefined): ComponentDef | undefined {
+    return id == null ? undefined : this.components.find((c) => c.id === id);
+  }
+
+  instances(componentId: number): Group[] {
+    return [...this.root.walk()].filter((g) => g.componentId === componentId);
+  }
+
+  /** Turn selected geometry into a component instance (a group whose edits are shared by its copies). */
+  makeComponent(context: Group, faceIds: number[], edgeKeys: string[], groups: Group[], name = 'Component'): Group {
+    const g = this.makeGroup(context, faceIds, edgeKeys, groups, name);
+    const def: ComponentDef = { id: this.nextItemId++, name };
+    this.components.push(def);
+    g.componentId = def.id;
+    return g;
+  }
+
+  /** Turn an existing group into a component. */
+  groupToComponent(g: Group): ComponentDef {
+    const def: ComponentDef = { id: this.nextItemId++, name: g.name };
+    this.components.push(def);
+    g.componentId = def.id;
+    return def;
+  }
+
+  /** Copy an edited instance's contents to every other instance of the same component. */
+  syncComponent(source: Group): void {
+    if (source.componentId == null) return;
+    const meshJSON = source.mesh.toJSON();
+    const kids = source.children.map((c) => c.toJSON());
+    for (const other of this.instances(source.componentId)) {
+      if (other === source || isAncestor(other, source) || isAncestor(source, other)) continue;
+      other.mesh = Mesh.fromJSON(meshJSON);
+      for (const c of [...other.children]) other.remove(c);
+      for (const k of kids) {
+        const copy = structuredClone(k);
+        const reId = (x: GroupJSON) => {
+          x.id = this.nextGroupId++;
+          x.children.forEach(reId);
+        };
+        reId(copy);
+        other.add(Group.fromJSON(copy));
+      }
+    }
+  }
+
+  /** Give an instance its own definition so edits no longer affect the others. */
+  makeUnique(g: Group): ComponentDef | undefined {
+    const old = this.component(g.componentId);
+    if (!old) return undefined;
+    const def: ComponentDef = { id: this.nextItemId++, name: `${old.name} #${this.instances(old.id).length}` };
+    this.components.push(def);
+    g.componentId = def.id;
+    return def;
+  }
+
+  /** Drop component definitions that no longer have instances. */
+  purgeComponents(): void {
+    const used = new Set([...this.root.walk()].map((g) => g.componentId).filter((x) => x != null));
+    this.components = this.components.filter((c) => used.has(c.id));
+  }
+
+  /** The component instance (if any) containing a group, innermost first. */
+  componentOf(g: Group | null): Group | null {
+    for (let p = g; p; p = p.parent) if (p.componentId != null) return p;
+    return null;
+  }
+
+  isTagVisible(tag: string): boolean {
+    if (!tag) return true;
+    return this.tags.find((t) => t.name === tag)?.visible ?? true;
+  }
+
   /** World bounds of the whole model. */
   bounds(): Box3 {
     return this.root.worldBounds();
   }
+}
+
+function matricesClose(a: Matrix4, b: Matrix4): boolean {
+  return a.elements.every((v, i) => Math.abs(v - b.elements[i]) < 1e-6);
+}
+
+function isAncestor(a: Group, b: Group): boolean {
+  for (let p = b.parent; p; p = p.parent) if (p === a) return true;
+  return false;
 }
 
 export function translationMatrix(v: Vector3): Matrix4 {

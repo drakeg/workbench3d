@@ -7,20 +7,25 @@ Rough priorities, open to discussion in issues. ✅ = done in v0.1.
 - ✅ Inference: endpoint, midpoint, on-edge, on-face, axis + arrow-key axis lock
 - ✅ Faces with holes (pockets/bosses), face splitting, rabbets
 - ✅ Groups, nested editing, explode, hide; move/rotate copies and arrays
-- [ ] **Components**: reusable definitions; edit one, all copies update (doors, drawers, studs)
-- [ ] **Scale** tool and **Offset** tool
+- ✅ **Components**: reusable definitions; edit one, all copies update (doors, drawers, studs)
+- ✅ **Scale** tool and **Offset** tool
 - [ ] **Follow Me** (sweep a profile along a path: trim, mouldings, handrails, bent tube)
-- [ ] Arcs (2-point arc, 3-point arc) and polygons
+- ✅ 2-point arc and polygons
+- [ ] 3-point arc, pie, freehand
 - [ ] Intersect faces / solid tools (union, subtract) for joinery and cope cuts
-- [ ] Inference from points ("from point" dotted lines), parallel/perpendicular inference
-- [ ] Guide lines and guide points (tape measure creates guides)
+- ✅ "From point" inference, parallel/perpendicular inference, Shift lock
+- [ ] Inference along face normals, tangents to arcs
+- ✅ Guide lines and guide points (tape measure creates guides)
+- [ ] Protractor tool (angled guides)
 - [ ] Soften/smooth edges for curved surfaces
 - [ ] Half-edge data structure and incremental rendering for big models
 
 ## Documentation & output
-- [ ] Dimension tool (linear, with leaders) and text labels
-- [ ] Scenes (saved camera views) and section planes
-- [ ] Tags / layers with visibility
+- ✅ Linear dimension tool
+- [ ] Text labels with leaders, angular/radial dimensions
+- ✅ Scenes (saved camera views) and section planes
+- [ ] Section fills (caps on cut faces), scene transitions for presentations/video
+- ✅ Tags / layers with visibility
 - [ ] Printable shop drawings: orthographic views with dimensions to PDF
 - [ ] Cut list → sheet/board layout optimizer (plywood nesting, 1D stock cutting for steel)
 
@@ -37,6 +42,7 @@ Rough priorities, open to discussion in issues. ✅ = done in v0.1.
 - [ ] 3MF export for 3D printing
 
 ## App
+- ✅ Right-click context menu
 - ✅ Desktop installers via Tauri, autosave
 - [ ] Code-signed macOS and Windows builds
 - [ ] Preferences dialog (mouse/trackpad mapping, colours, default units)

@@ -4,7 +4,7 @@ import { closestParamOnLine } from '../core/geom';
 import { COLORS, Viewport, isHidden } from './viewport';
 
 export type Axis = 'x' | 'y' | 'z';
-export type InferKind = 'endpoint' | 'midpoint' | 'on-edge' | 'on-face' | 'axis' | 'ground' | 'plane' | 'free';
+export type InferKind = 'endpoint' | 'midpoint' | 'on-edge' | 'on-face' | 'axis' | 'parallel' | 'perpendicular' | 'from-point' | 'ground' | 'plane' | 'free';
 
 export interface Inference {
   point: THREE.Vector3;
@@ -18,12 +18,20 @@ export interface Inference {
   /** World normal of the face under the cursor, if any. */
   normal?: THREE.Vector3;
   axis?: Axis;
+  /** Direction from the start point this inference follows (axis, parallel...). */
+  dir?: THREE.Vector3;
+  /** Dotted helper line to draw (e.g. for "From Point"). */
+  guide?: [THREE.Vector3, THREE.Vector3];
 }
 
 export interface InferOptions {
   /** Start point of the current operation: enables axis inference. */
   from?: THREE.Vector3;
   lockAxis?: Axis | null;
+  /** Lock to any direction from `from` (Shift-lock). Overrides lockAxis. */
+  lockDir?: THREE.Vector3 | null;
+  /** Guide lines (dir set) and guide points (no dir), in world space. */
+  guides?: { point: THREE.Vector3; dir?: THREE.Vector3 }[];
   /** Constrain the result to this plane (endpoints are projected onto it). */
   plane?: THREE.Plane;
   /** Skip vertices/edges of these groups (e.g. a group being moved). */
@@ -110,16 +118,46 @@ export function infer(x: number, y: number, root: Group, vp: Viewport, opts: Inf
     return r;
   };
 
-  // Locked axis: everything is projected onto the axis line through `from`.
-  if (opts.from && opts.lockAxis) {
-    const dir = AXES[opts.lockAxis];
+  // Guides: guide points act like endpoints, guide lines like (infinite) edges.
+  let bestGuideLine: { d: number; p: THREE.Vector3 } | null = null;
+  for (const gd of opts.guides ?? []) {
+    if (!gd.dir) {
+      const s = vp.project(gd.point);
+      const d = Math.hypot(s.x - x, s.y - y);
+      if (!s.behind && d < SNAP_PX && (!bestV || d < bestV.d)) bestV = { d, p: gd.point.clone(), g: root, id: -1 };
+      continue;
+    }
+    const t = closestParamOnLine(gd.point, gd.dir, ray.origin, ray.direction);
+    const p = gd.point.clone().add(gd.dir.clone().multiplyScalar(t));
+    const s = vp.project(p);
+    const d = Math.hypot(s.x - x, s.y - y);
+    if (!s.behind && d < EDGE_PX && (!bestGuideLine || d < bestGuideLine.d)) bestGuideLine = { d, p };
+  }
+
+  // remember what the cursor touched, for parallel and "from point" inferences later
+  if (bestV && bestV.id !== -1) hints.point = bestV.p.clone();
+  const edgeSeen = bestMid ?? bestEdge;
+  if (edgeSeen && edgeSeen.a.distanceTo(edgeSeen.b) > 1e-6) hints.edge = { a: edgeSeen.a.clone(), b: edgeSeen.b.clone() };
+
+  // Locked direction (arrow keys or Shift): everything is projected onto the line through `from`.
+  const lockDir = opts.lockDir ?? (opts.lockAxis ? AXES[opts.lockAxis] : null);
+  if (opts.from && lockDir) {
+    const dir = lockDir.clone().normalize();
     let p: THREE.Vector3;
     if (bestV) p = opts.from.clone().add(dir.clone().multiplyScalar(bestV.p.clone().sub(opts.from).dot(dir)));
     else p = opts.from.clone().add(dir.clone().multiplyScalar(closestParamOnLine(opts.from, dir, ray.origin, ray.direction)));
-    return { point: p, kind: 'axis', axis: opts.lockAxis, label: AXIS_NAMES[opts.lockAxis] + ' (locked)', color: cssColor(AXIS_COLORS[opts.lockAxis]) };
+    const ax = alignedAxis(dir);
+    return {
+      point: p,
+      kind: 'axis',
+      axis: ax ?? undefined,
+      dir,
+      label: (ax ? AXIS_NAMES[ax] : 'Along Direction') + ' (locked)',
+      color: ax ? cssColor(AXIS_COLORS[ax]) : MAGENTA,
+    };
   }
 
-  if (bestV) return onPlane({ point: bestV.p.clone(), kind: 'endpoint', label: 'Endpoint', color: '#16a34a', group: bestV.g, vertexId: bestV.id });
+  if (bestV) return onPlane({ point: bestV.p.clone(), kind: 'endpoint', label: bestV.id === -1 ? 'Guide Point' : 'Endpoint', color: '#16a34a', group: bestV.g, vertexId: bestV.id === -1 ? undefined : bestV.id });
   if (bestMid)
     return onPlane({
       point: bestMid.p.clone(),
@@ -131,18 +169,45 @@ export function infer(x: number, y: number, root: Group, vp: Viewport, opts: Inf
     });
 
   if (opts.from) {
-    let best: { d: number; p: THREE.Vector3; axis: Axis } | null = null;
-    for (const axis of ['x', 'y', 'z'] as Axis[]) {
-      if (opts.plane && Math.abs(opts.plane.normal.dot(AXES[axis])) > 0.01) continue;
-      const dir = AXES[axis];
-      const t = closestParamOnLine(opts.from, dir, ray.origin, ray.direction);
-      const p = opts.from.clone().add(dir.clone().multiplyScalar(t));
+    // candidate directions from the start point: the three axes, plus parallel/perpendicular to the last edge touched
+    const dirs: { dir: THREE.Vector3; axis?: Axis; label: string; color: string; kind: InferKind }[] = (['x', 'y', 'z'] as Axis[]).map((a) => ({
+      dir: AXES[a],
+      axis: a,
+      label: AXIS_NAMES[a],
+      color: cssColor(AXIS_COLORS[a]),
+      kind: 'axis' as InferKind,
+    }));
+    if (hints.edge) {
+      const ed = hints.edge.b.clone().sub(hints.edge.a).normalize();
+      if (!alignedAxis(ed)) {
+        dirs.push({ dir: ed, label: 'Parallel to Edge', color: MAGENTA, kind: 'parallel' });
+        // perpendicular in the horizontal plane, or vertical-plane perpendicular for sloped edges
+        const up = Math.abs(ed.z) > 0.999 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+        const perp = new THREE.Vector3().crossVectors(ed, up).normalize();
+        if (perp.lengthSq() > 0.5) dirs.push({ dir: perp, label: 'Perpendicular to Edge', color: MAGENTA, kind: 'perpendicular' });
+      }
+    }
+    let best: { d: number; p: THREE.Vector3; c: (typeof dirs)[number] } | null = null;
+    for (const c of dirs) {
+      if (opts.plane && Math.abs(opts.plane.normal.dot(c.dir)) > 0.01) continue;
+      const t = closestParamOnLine(opts.from, c.dir, ray.origin, ray.direction);
+      const p = opts.from.clone().add(c.dir.clone().multiplyScalar(t));
       const s = vp.project(p);
       if (s.behind) continue;
       const d = Math.hypot(s.x - x, s.y - y);
-      if (d < AXIS_PX && (!best || d < best.d) && Math.abs(t) > 1e-6) best = { d, p, axis };
+      if (d < AXIS_PX && (!best || d < best.d) && Math.abs(t) > 1e-6) best = { d, p, c };
     }
-    if (best) return { point: best.p, kind: 'axis', axis: best.axis, label: AXIS_NAMES[best.axis], color: cssColor(AXIS_COLORS[best.axis]) };
+    if (best) {
+      // "From point": slide along the direction until level with a point the cursor touched earlier
+      if (hints.point && best.c.axis) {
+        const dir = best.c.dir;
+        const q = opts.from.clone().add(dir.clone().multiplyScalar(hints.point.clone().sub(opts.from).dot(dir)));
+        const s = vp.project(q);
+        if (!s.behind && Math.hypot(s.x - x, s.y - y) < SNAP_PX && q.distanceTo(hints.point) > 1e-4 && q.distanceTo(opts.from) > 1e-4)
+          return { point: q, kind: 'from-point', axis: best.c.axis, dir, label: 'From Point', color: best.c.color, guide: [hints.point.clone(), q] };
+      }
+      return { point: best.p, kind: best.c.kind, axis: best.c.axis, dir: best.c.dir, label: best.c.label, color: best.c.color };
+    }
   }
 
   if (bestEdge)
@@ -154,6 +219,7 @@ export function infer(x: number, y: number, root: Group, vp: Viewport, opts: Inf
       group: bestEdge.g,
       edge: { key: bestEdge.key, a: bestEdge.a, b: bestEdge.b },
     });
+  if (bestGuideLine) return onPlane({ point: bestGuideLine.p, kind: 'on-edge', label: 'On Guide', color: '#0d9488' });
 
   if (opts.plane) {
     const p = ray.intersectPlane(opts.plane, new THREE.Vector3());
@@ -168,6 +234,11 @@ export function infer(x: number, y: number, root: Group, vp: Viewport, opts: Inf
   if (gp && gp.distanceTo(ray.origin) < 1e5) return { point: gp, kind: 'ground', label: '', color: '#64748b', normal: new THREE.Vector3(0, 0, 1) };
   return { point: ray.at(100, new THREE.Vector3()), kind: 'free', label: '', color: '#64748b' };
 }
+
+const MAGENTA = '#c026d3';
+
+/** What the cursor touched recently: used for parallel and "from point" inference. */
+export const hints: { edge: { a: THREE.Vector3; b: THREE.Vector3 } | null; point: THREE.Vector3 | null } = { edge: null, point: null };
 
 export function cssColor(c: number): string {
   return '#' + c.toString(16).padStart(6, '0');

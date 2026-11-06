@@ -5,6 +5,7 @@ import { store } from '../app/platform';
 import { Group } from '../core/document';
 import { formatArea } from '../core/units';
 import { icons } from '../tools/icons';
+import { pickEntity } from '../tools/select';
 
 export const MATERIALS: { name: string; color: string }[] = [
   { name: 'Pine', color: '#e3c58f' },
@@ -27,13 +28,14 @@ export const MATERIALS: { name: string; color: string }[] = [
 
 const MENU_ORDER = ['File', 'Edit', 'View', 'Draw', 'Tools', 'Add-ons', 'Help'];
 const TOOL_MENUS: Record<string, string[]> = {
-  Draw: ['line', 'rect', 'circle'],
-  Tools: ['select', 'eraser', 'paint', 'pushpull', 'move', 'rotate', 'tape', 'orbit', 'pan', 'zoom'],
+  Draw: ['line', 'arc', 'rect', 'circle', 'polygon'],
+  Tools: ['select', 'eraser', 'paint', 'pushpull', 'offset', 'move', 'rotate', 'scale', 'tape', 'dimension', 'section', 'orbit', 'pan', 'zoom'],
 };
 const TOOLBAR: string[][] = [
   ['select', 'eraser', 'paint'],
-  ['line', 'rect', 'circle'],
-  ['pushpull', 'move', 'rotate', 'tape'],
+  ['line', 'arc', 'rect', 'circle', 'polygon'],
+  ['pushpull', 'offset', 'move', 'rotate', 'scale'],
+  ['tape', 'dimension', 'section'],
   ['orbit', 'pan', 'zoom'],
 ];
 
@@ -61,6 +63,10 @@ export class UI {
   private title: HTMLElement;
   private openMenu: HTMLElement | null = null;
   private crumbs: HTMLElement;
+  private tagsEl!: HTMLElement;
+  private scenesEl!: HTMLElement;
+  private componentsEl!: HTMLElement;
+  private sceneTabs!: HTMLElement;
 
   constructor(private app: App, root: HTMLElement, stage: HTMLElement) {
     this.menubar = h('nav', { class: 'menubar', 'aria-label': 'Main menu' });
@@ -79,7 +85,19 @@ export class UI {
       const d = h('details', open ? { open: '' } : {}, [h('summary', {}, [title]), body]);
       return d;
     };
-    const panel = h('aside', { class: 'panel' }, [section('Entity Info', this.info), section('Materials', this.materials), section('Outliner', this.outliner)]);
+    this.tagsEl = h('div', { class: 'section-body tags' });
+    this.scenesEl = h('div', { class: 'section-body scenes' });
+    this.componentsEl = h('div', { class: 'section-body components' });
+    const panel = h('aside', { class: 'panel' }, [
+      section('Entity Info', this.info),
+      section('Materials', this.materials),
+      section('Components', this.componentsEl, false),
+      section('Tags', this.tagsEl, false),
+      section('Scenes', this.scenesEl, false),
+      section('Outliner', this.outliner),
+    ]);
+    this.sceneTabs = h('div', { class: 'scene-tabs' });
+    stage.append(this.sceneTabs);
 
     this.hintEl = h('div', { class: 'hint' });
     this.vcbLabel = h('label', { for: 'vcb' });
@@ -100,7 +118,9 @@ export class UI {
 
     document.addEventListener('pointerdown', (e) => {
       if (this.openMenu && !this.menubar.contains(e.target as Node)) this.closeMenu();
+      if (this.ctxMenu && !this.ctxMenu.contains(e.target as Node)) this.closeContextMenu();
     });
+    app.contextMenu = (x, y) => this.showContextMenu(x, y);
 
     app.on('tool', () => {
       this.renderToolbar();
@@ -116,6 +136,9 @@ export class UI {
       this.renderInfo();
       this.renderOutliner();
       this.renderTitle();
+      this.renderTags();
+      this.renderScenes();
+      this.renderComponents();
     });
     app.on('context', () => {
       this.renderOutliner();
@@ -133,6 +156,130 @@ export class UI {
     this.renderTitle();
     this.renderCrumbs();
     this.renderVCB();
+    this.renderTags();
+    this.renderScenes();
+    this.renderComponents();
+  }
+
+  // ---------- tags ----------
+
+  renderTags(): void {
+    const app = this.app;
+    const el = this.tagsEl;
+    el.innerHTML = '';
+    const counts = new Map<string, number>();
+    for (const g of app.doc.root.walk()) if (g.tag) counts.set(g.tag, (counts.get(g.tag) ?? 0) + 1);
+    for (const t of app.doc.tags) {
+      const eye = h('button', { class: 'eye', type: 'button', title: t.visible ? 'Hide tag' : 'Show tag', html: t.visible ? '●' : '◌' });
+      eye.onclick = () => app.doc.transact(t.visible ? 'Hide Tag' : 'Show Tag', () => (app.doc.tags.find((x) => x.name === t.name)!.visible = !t.visible));
+      const del = h('button', { class: 'mini', type: 'button', title: 'Delete tag (parts become untagged)' }, ['×']);
+      del.onclick = () =>
+        app.doc.transact('Delete Tag', () => {
+          app.doc.tags = app.doc.tags.filter((x) => x.name !== t.name);
+          for (const g of app.doc.root.walk()) if (g.tag === t.name) g.tag = '';
+        });
+      el.append(h('div', { class: `ol-item${t.visible ? '' : ' hidden'}` }, [eye, h('span', { class: 'name' }, [t.name]), h('small', { class: 'muted' }, [String(counts.get(t.name) ?? 0)]), del]));
+    }
+    const add = h('button', { type: 'button', class: 'add' }, ['+ Add tag']);
+    add.onclick = async () => {
+      const name = await this.askName('New tag', 'Tag name', `Tag ${app.doc.tags.length + 1}`);
+      if (!name || app.doc.tags.some((t) => t.name === name)) return;
+      const groups = app.selectedGroups().map((g) => g.id);
+      app.doc.transact('Add Tag', () => {
+        app.doc.tags.push({ name, visible: true });
+        // tag whatever is selected
+        for (const id of groups) app.doc.findGroup(id)!.tag = name;
+      });
+    };
+    if (!app.doc.tags.length) el.append(h('p', { class: 'muted' }, ['Tags show and hide groups of parts, like "Framing", "Cabinets" or "Electrical".']));
+    el.append(h('div', { class: 'actions' }, [add]));
+  }
+
+  private async askName(title: string, label: string, value: string): Promise<string | null> {
+    const { form } = await import('./dialogs');
+    const v = await form(title, [{ name: 'n', label, type: 'text', value }], this.app.doc.units);
+    const n = v ? String(v.n).trim() : '';
+    return n || null;
+  }
+
+  // ---------- scenes ----------
+
+  renderScenes(): void {
+    const app = this.app;
+    this.scenesEl.innerHTML = '';
+    this.sceneTabs.innerHTML = '';
+    app.doc.scenes.forEach((sc, i) => {
+      const go = h('span', { class: 'name' }, [sc.name]);
+      const item = h('div', { class: `ol-item${i === app.activeScene ? ' selected' : ''}` }, [go]);
+      item.onclick = () => {
+        app.goToScene(i);
+        this.renderScenes();
+      };
+      const ren = h('button', { class: 'mini', type: 'button', title: 'Rename' }, ['✎']);
+      ren.onclick = async (e) => {
+        e.stopPropagation();
+        const n = await this.askName('Rename scene', 'Name', sc.name);
+        if (n) app.doc.transact('Rename Scene', () => (app.doc.scenes[i].name = n));
+      };
+      const del = h('button', { class: 'mini', type: 'button', title: 'Delete scene' }, ['×']);
+      del.onclick = (e) => {
+        e.stopPropagation();
+        app.doc.transact('Delete Scene', () => app.doc.scenes.splice(i, 1));
+        if (app.activeScene >= app.doc.scenes.length) app.activeScene = app.doc.scenes.length - 1;
+      };
+      item.append(ren, del);
+      this.scenesEl.append(item);
+      const tab = h('button', { type: 'button', class: i === app.activeScene ? 'active' : '' }, [sc.name]);
+      tab.onclick = () => {
+        app.goToScene(i);
+        this.renderScenes();
+      };
+      this.sceneTabs.append(tab);
+    });
+    this.sceneTabs.style.display = app.doc.scenes.length ? 'flex' : 'none';
+    const add = h('button', { type: 'button', class: 'add' }, ['+ Add scene']);
+    add.onclick = () => app.runCommand('scene.add');
+    const upd = h('button', { type: 'button' }, ['Update']);
+    upd.onclick = () => app.runCommand('scene.update');
+    if (!app.doc.scenes.length) this.scenesEl.append(h('p', { class: 'muted' }, ['Scenes save a camera view plus which tags are visible, like "Floor plan" or "Kitchen wall".']));
+    this.scenesEl.append(h('div', { class: 'actions' }, [add, ...(app.activeScene >= 0 ? [upd] : [])]));
+  }
+
+  // ---------- components ----------
+
+  renderComponents(): void {
+    const app = this.app;
+    const el = this.componentsEl;
+    el.innerHTML = '';
+    for (const c of app.doc.components) {
+      const n = app.doc.instances(c.id).length;
+      const place = h('button', { class: 'mini', type: 'button', title: 'Place another copy' }, ['+']);
+      place.onclick = (e) => {
+        e.stopPropagation();
+        const src = app.doc.instances(c.id)[0];
+        if (!src) return;
+        const b = app.modelBounds();
+        const copy = app.doc.transact('Place Component', () => {
+          const d = app.doc.duplicateGroup(src);
+          // put it beside the model, at ground level
+          const wb = d.worldBounds();
+          d.matrix.premultiply(new THREE.Matrix4().makeTranslation(b.max.x + 6 - wb.min.x, 0, -wb.min.z));
+          d.parent?.remove(d);
+          app.context.add(d);
+          return d;
+        });
+        app.setSelection({ groups: [copy.id] });
+        app.setTool('move');
+      };
+      const item = h('div', { class: 'ol-item' }, [h('span', { class: 'comp-icon', html: '◆' }), h('span', { class: 'name', title: c.description ?? '' }, [c.name]), h('small', { class: 'muted' }, [`×${n}`]), place]);
+      item.onclick = () => {
+        // select every instance in the current context
+        const ids = app.context.children.filter((g) => g.componentId === c.id).map((g) => g.id);
+        app.setSelection({ groups: ids });
+      };
+      el.append(item);
+    }
+    if (!app.doc.components.length) el.append(h('p', { class: 'muted' }, ['Components are reusable parts: edit one and every copy updates. Select something and press G.']));
   }
 
   // ---------- menus ----------
@@ -197,6 +344,49 @@ export class UI {
       };
       this.menubar.append(wrap);
     }
+  }
+
+  // ---------- right-click menu ----------
+
+  private ctxMenu: HTMLElement | null = null;
+
+  private closeContextMenu(): void {
+    this.ctxMenu?.remove();
+    this.ctxMenu = null;
+  }
+
+  showContextMenu(clientX: number, clientY: number): void {
+    const app = this.app;
+    this.closeContextMenu();
+    const r = app.vp.dom.getBoundingClientRect();
+    const p = pickEntity(app, { x: clientX - r.left, y: clientY - r.top }, true);
+    // right-clicking something outside the selection selects it, like most apps
+    if (p) {
+      const sel = app.selection;
+      const inSel = p.kind === 'face' ? sel.faces.has(p.id as number) : p.kind === 'edge' ? sel.edges.has(p.id as string) : sel.groups.has(p.id as number);
+      if (!inSel) app.setSelection(p.kind === 'face' ? { faces: [p.id as number] } : p.kind === 'edge' ? { edges: [p.id as string] } : { groups: [p.id as number] });
+    }
+    const items: HTMLElement[] = [];
+    let lastMenu = '';
+    for (const c of app.commands.values()) {
+      if (!c.context || (c.enabled && !c.enabled())) continue;
+      if (lastMenu && c.menu !== lastMenu) items.push(h('hr'));
+      lastMenu = c.menu ?? '';
+      const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [c.label]), h('kbd', {}, [c.shortcut ? kbd(c.shortcut) : ''])]);
+      b.onclick = () => {
+        this.closeContextMenu();
+        app.runCommand(c.id);
+      };
+      items.push(b);
+    }
+    if (!items.length) return;
+    const menu = h('div', { class: 'menu-list context-menu', role: 'menu' }, items);
+    document.body.append(menu);
+    const mw = menu.offsetWidth;
+    const mh = menu.offsetHeight;
+    menu.style.left = `${Math.min(clientX, window.innerWidth - mw - 6)}px`;
+    menu.style.top = `${Math.min(clientY, window.innerHeight - mh - 6)}px`;
+    this.ctxMenu = menu;
   }
 
   // ---------- toolbar ----------
@@ -308,6 +498,26 @@ export class UI {
       for (const d of g.walk()) for (const f of d.mesh.faces.values()) area += d.mesh.area(f);
       row('Surface area', formatArea(area, u));
       for (const [k, v] of Object.entries(g.attributes)) row(k, String(v));
+      const def = app.doc.component(g.componentId);
+      if (def) row('Component', `${def.name} (${app.doc.instances(def.id).length} in model)`);
+      const tagSel = h('select', { 'aria-label': 'Tag' });
+      tagSel.append(h('option', { value: '' }, ['Untagged']));
+      for (const t of app.doc.tags) tagSel.append(h('option', { value: t.name }, [t.name]));
+      tagSel.append(h('option', { value: '__new' }, ['New tag…']));
+      tagSel.value = g.tag;
+      tagSel.onchange = async () => {
+        let v = tagSel.value;
+        if (v === '__new') {
+          const n = await this.askName('New tag', 'Tag name', `Tag ${app.doc.tags.length + 1}`);
+          if (!n) return this.renderInfo();
+          v = n;
+        }
+        app.doc.transact('Tag', () => {
+          if (v && !app.doc.tags.some((t) => t.name === v)) app.doc.tags.push({ name: v, visible: true });
+          app.doc.findGroup(g.id)!.tag = v;
+        });
+      };
+      this.info.append(h('div', { class: 'kv stack' }, [h('span', {}, ['Tag']), tagSel]));
       const actions = h('div', { class: 'actions' });
       const edit = h('button', { type: 'button' }, ['Edit group']);
       edit.onclick = () => app.enterGroup(g.id);
@@ -316,10 +526,38 @@ export class UI {
       const hide = h('button', { type: 'button' }, ['Hide']);
       hide.onclick = () => app.runCommand('edit.hide');
       actions.append(edit, explode, hide);
+      if (def && app.doc.instances(def.id).length > 1) {
+        const uniq = h('button', { type: 'button' }, ['Make unique']);
+        uniq.onclick = () => app.runCommand('edit.makeUnique');
+        actions.append(uniq);
+      } else if (!def) {
+        const comp = h('button', { type: 'button' }, ['Make component']);
+        comp.onclick = () => app.runCommand('edit.component');
+        actions.append(comp);
+      }
       this.info.append(actions);
       return;
     }
 
+    if (app.selectedItems.size && !groups.length && !sel.faces.size && !sel.edges.size) {
+      const ids = app.selectedItems;
+      const n = (arr: { id: number }[]) => arr.filter((x) => ids.has(x.id)).length;
+      const g2 = n(app.doc.guides);
+      const d2 = n(app.doc.dimensions);
+      const s2 = n(app.doc.sections);
+      const bits = [g2 && `${g2} guide${g2 > 1 ? 's' : ''}`, d2 && `${d2} dimension${d2 > 1 ? 's' : ''}`, s2 && `${s2} section plane${s2 > 1 ? 's' : ''}`].filter(Boolean);
+      this.info.append(h('p', {}, [bits.join(', ')]));
+      const del = h('button', { type: 'button' }, ['Delete']);
+      del.onclick = () => app.runCommand('edit.delete');
+      const actions = h('div', { class: 'actions' }, [del]);
+      if (s2) {
+        const act = h('button', { type: 'button' }, ['Toggle cut']);
+        act.onclick = () => app.runCommand('view.sectionCut');
+        actions.append(act);
+      }
+      this.info.append(actions);
+      return;
+    }
     const parts: string[] = [];
     if (groups.length) parts.push(`${groups.length} group${groups.length > 1 ? 's' : ''}`);
     if (sel.faces.size) parts.push(`${sel.faces.size} face${sel.faces.size > 1 ? 's' : ''}`);
@@ -386,7 +624,7 @@ export class UI {
           e.stopPropagation();
           app.doc.transact(c.hidden ? 'Show' : 'Hide', () => (app.doc.findGroup(c.id)!.hidden = !c.hidden));
         };
-        const label = h('span', { class: 'name' }, [c.name]);
+        const label = h('span', { class: 'name' }, [c.componentId != null ? '◆ ' : '', c.name]);
         const item = h('div', { class: `ol-item${selected ? ' selected' : ''}${editing ? ' editing' : ''}${c.hidden ? ' hidden' : ''}`, style: `padding-left:${8 + depth * 14}px` }, [eye, label]);
         item.onclick = () => {
           if (c.parent && app.context !== c.parent) app.enterGroup(c.parent.id);

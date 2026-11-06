@@ -276,7 +276,7 @@ kbd {
 }
 .crumbs {
   position: absolute;
-  top: 10px;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: none;
@@ -677,4 +677,99 @@ table.shortcuts td:last-child {
     width: auto;
     left: 12px;
   }
+}
+.context-menu {
+  display: block;
+  position: fixed;
+  z-index: 60;
+  min-width: 220px;
+}
+.label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.dim-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #c8ced6;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dim-label.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.mini {
+  border: 0;
+  background: none;
+  color: #8b96a1;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: auto;
+}
+.mini + .mini {
+  margin-left: 0;
+}
+.mini:hover {
+  color: var(--text);
+}
+.ol-item small {
+  margin-left: auto;
+}
+.ol-item small + .mini {
+  margin-left: 4px;
+}
+.comp-icon {
+  color: #7c3aed;
+  font-size: 11px;
+}
+.section-body.tags,
+.section-body.scenes,
+.section-body.components {
+  padding: 4px 0 10px;
+}
+.section-body.tags .muted,
+.section-body.scenes .muted,
+.section-body.components .muted,
+.section-body .actions {
+  padding: 0 12px;
+}
+.kv select {
+  width: 100%;
+  font: inherit;
+  padding: 5px 6px;
+  border: 1px solid #cdd3da;
+  border-radius: 6px;
+}
+.scene-tabs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: none;
+  gap: 2px;
+  padding: 4px 6px 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.scene-tabs button {
+  pointer-events: auto;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 6px 6px 0 0;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.scene-tabs button.active {
+  background: #fff;
+  font-weight: 600;
+  color: var(--accent);
 }
