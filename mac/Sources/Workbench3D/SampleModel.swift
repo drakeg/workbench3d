@@ -1,3 +1,4 @@
+import simd
 import Workbench3DKit
 
 /// A small workbench, used by snapshot mode and the self-test: a top, four legs (one component),

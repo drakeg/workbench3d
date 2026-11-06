@@ -1,4 +1,5 @@
 import AppKit
+import simd
 import Workbench3DKit
 
 enum ToolID: String, CaseIterable, Identifiable {

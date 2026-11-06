@@ -1,4 +1,5 @@
 import SwiftUI
+import simd
 import Workbench3DKit
 
 /// App preferences (not saved in models), in UserDefaults. Views read them with @AppStorage.

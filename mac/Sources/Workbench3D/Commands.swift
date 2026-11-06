@@ -1,5 +1,6 @@
 import AppKit
 import UniformTypeIdentifiers
+import simd
 import Workbench3DKit
 
 /// Menu commands that act on the selection. Each is one undo step.

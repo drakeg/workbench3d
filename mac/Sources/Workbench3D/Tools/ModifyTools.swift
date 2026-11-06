@@ -1,4 +1,5 @@
 import AppKit
+import simd
 import Workbench3DKit
 
 private func show(_ e: Editor, _ inf: Inference?) {

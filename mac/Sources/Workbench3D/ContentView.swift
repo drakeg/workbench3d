@@ -1,9 +1,10 @@
 import SwiftUI
+import simd
 import Workbench3DKit
 
 extension ModelDocument {
     /// The window's editor, made on first use so it lives as long as the document.
-    var sharedEditor: Editor {
+    @MainActor var sharedEditor: Editor {
         if let editor { return editor }
         let e = Editor(document: self)
         editor = e

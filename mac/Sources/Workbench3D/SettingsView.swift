@@ -1,4 +1,5 @@
 import SwiftUI
+import simd
 import Workbench3DKit
 
 /// The Settings window (Command-Comma). One tab per topic; each tab is a grouped Form that sizes

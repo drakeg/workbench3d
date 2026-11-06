@@ -1,4 +1,5 @@
 import SwiftUI
+import simd
 import Workbench3DKit
 
 // The engine and SwiftUI both have a Group and a Scene. In this app, Group is a model group and

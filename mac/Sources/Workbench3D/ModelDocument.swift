@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import simd
 import Workbench3DKit
 
 nonisolated extension UTType {

@@ -1,4 +1,5 @@
 import AppKit
+import simd
 import Workbench3DKit
 
 private func setHover(_ e: Editor, _ p: Picked?) {

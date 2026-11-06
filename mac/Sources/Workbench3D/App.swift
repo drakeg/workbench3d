@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import simd
 import Workbench3DKit
 
 // Workbench3D

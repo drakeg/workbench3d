@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import SwiftUI
+import simd
 import Workbench3DKit
 
 /// What is selected in the group being edited.

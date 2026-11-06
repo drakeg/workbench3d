@@ -1,5 +1,6 @@
 import AppKit
 import Metal
+import simd
 import Workbench3DKit
 
 /// Self-test for agents and CI: drives the app's real editor and tools on in-memory models,

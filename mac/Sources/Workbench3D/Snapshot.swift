@@ -4,6 +4,7 @@ import ImageIO
 import Metal
 import SwiftUI
 import UniformTypeIdentifiers
+import simd
 import Workbench3DKit
 
 /// Screenshot mode for agents and CI.

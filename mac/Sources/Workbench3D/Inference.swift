@@ -1,4 +1,5 @@
 import SwiftUI
+import simd
 import Workbench3DKit
 
 enum Axis: String {

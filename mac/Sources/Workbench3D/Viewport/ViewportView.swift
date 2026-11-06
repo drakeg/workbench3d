@@ -1,6 +1,7 @@
 import AppKit
 import MetalKit
 import SwiftUI
+import simd
 import Workbench3DKit
 
 /// The 3D view: an MTKView that draws on demand and turns mouse, trackpad and keyboard input into
@@ -320,8 +321,12 @@ final class ViewportNSView: MTKView {
 
     private func contextMenu(_ e: Editor) -> NSMenu {
         let menu = NSMenu()
+        menu.autoenablesItems = false
         func item(_ title: String, enabled: Bool = true, _ action: @escaping () -> Void) {
-            let i = ClosureMenuItem(title: title, action: action)
+            let handler = MenuAction(action)
+            let i = NSMenuItem(title: title, action: #selector(MenuAction.fire(_:)), keyEquivalent: "")
+            i.target = handler
+            i.representedObject = handler
             i.isEnabled = enabled
             menu.addItem(i)
         }
@@ -345,17 +350,11 @@ final class ViewportNSView: MTKView {
     }
 }
 
-/// A menu item that runs a closure.
-final class ClosureMenuItem: NSMenuItem {
+/// Runs a closure from a menu item (kept alive by the item's representedObject).
+final class MenuAction: NSObject {
     private let run: () -> Void
-    init(title: String, action: @escaping () -> Void) {
-        run = action
-        super.init(title: title, action: #selector(fire), keyEquivalent: "")
-        target = self
-    }
-    @available(*, unavailable)
-    required init(coder: NSCoder) { fatalError() }
-    @objc private func fire() { run() }
+    init(_ run: @escaping () -> Void) { self.run = run }
+    @objc func fire(_ sender: Any?) { run() }
 }
 
 struct ViewportView: NSViewRepresentable {
