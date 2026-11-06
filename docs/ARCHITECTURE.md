@@ -19,11 +19,19 @@ src/
     inference.ts   Snapping: endpoint, midpoint, on-edge, on-face, axis locks.
     commands.ts    Built-in menu commands (file, edit, view…).
     platform.ts    Browser vs desktop file access; safe localStorage.
+    os.ts          Which OS we're on and its conventions: shortcut glyphs (⇧⌘Z vs Ctrl+Shift+Z),
+                   Title Case vs sentence case labels. ?platform=mac|windows previews either.
+    nativeMenu.ts  The macOS menu bar (Apple's order) built from the same commands as the in-app menus.
+    desktop.ts     Desktop-only behaviour: save prompts on close/quit, files from Finder/Explorer,
+                   the Mac Settings window, drag-and-drop to open.
+    settings.ts    App preferences (not saved in models), synced across windows.
+    clipboard.ts   Cut/Copy/Paste of geometry and groups.
   tools/           One class per tool, all implementing the Tool interface in tool.ts.
   plugins/api.ts   The add-on API and the add-on manager.
   ui/              Menus, toolbar, side panels, status bar, dialogs/forms.
 addons/            Built-in add-ons (Lumber, Steel, Cut List); they only use the public API.
-src-tauri/         Desktop shell (Rust). Rarely needs changes.
+src-tauri/         Desktop shell (Rust): window state, files opened from Finder/Explorer, quit handling.
+icons-src/         Icon sources: macOS (rounded square on Apple's grid), Windows (no plate), web/Linux.
 tests/             Vitest unit tests for core/.
 scripts/smoke.mjs  End-to-end test that drives the real UI in headless Chrome.
 ```
@@ -44,6 +52,23 @@ Faces drawn on the ground point down, so pulling one up gives outward-facing wal
 **Undo is snapshots.** `doc.transact(label, fn)` serializes the document before `fn` runs. It's simple and robust. Live previews (`app.live()`) restore the starting snapshot on every mouse move and re-apply the operation from scratch, so tools never accumulate drift. Because restore creates new objects, tools hold **ids**, never `Group`/`Face` references, across moves.
 
 **Rendering is rebuilt from the document** on each change (`Viewport.rebuild`). That's fine for the model sizes we target today; incremental updates are on the roadmap.
+
+## Per-platform design
+
+The desktop app follows the Mac and Windows design rules from the BAMA and BAWA skill packs
+(github.com/daveebbelaar/bama, github.com/daveebbelaar/bawa), applied to our web UI:
+
+- Mac: native menu bar, About and Settings… (⌘,) in the app menu, Title Case labels, no shortcuts in
+  context menus, Settings as its own tabbed window that applies changes at once, Duplicate instead
+  of Save As, windows open with nothing focused, no app-only appearance setting.
+- Windows: Segoe UI Variable 14px, 4/8px corners, sentence case, Settings as a page of cards in the
+  File menu and the toolbar gear (with an App theme choice), shortcuts shown in context menus,
+  F1/F2/Shift+F10, Ctrl+Y redo.
+- Both: light and dark palettes (chrome and viewport), Undo/Redo that name the action, labels that
+  follow state ("Show Grid"/"Hide Grid"), ask to save only when there are unsaved changes.
+
+Preview either in a browser with `?platform=mac` or `?platform=windows` (and `&theme=dark`).
+`scripts/smoke-platform.mjs` checks these conventions in CI.
 
 ## Coordinate system
 

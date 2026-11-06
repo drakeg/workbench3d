@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { App, Command } from '../app/app';
 import { kbd } from '../app/commands';
+import { isMac, isWindows, menuLabel, withShortcut } from '../app/os';
 import { store } from '../app/platform';
 import { Group } from '../core/document';
 import { formatArea } from '../core/units';
@@ -26,8 +27,9 @@ export const MATERIALS: { name: string; color: string }[] = [
   { name: 'Default', color: '#f4f1ea' },
 ];
 
-const MENU_ORDER = ['File', 'Edit', 'View', 'Draw', 'Tools', 'Add-ons', 'Help'];
-const TOOL_MENUS: Record<string, string[]> = {
+// 'App' is the Mac application menu (About, Settings...). Elsewhere those items live in File and Help.
+const MENU_ORDER = ['App', 'File', 'Edit', 'View', 'Draw', 'Tools', 'Add-ons', 'Help'];
+export const TOOL_MENUS: Record<string, string[]> = {
   Draw: ['line', 'arc', 'rect', 'circle', 'polygon'],
   Tools: ['select', 'eraser', 'paint', 'pushpull', 'offset', 'move', 'rotate', 'scale', 'tape', 'dimension', 'section', 'orbit', 'pan', 'zoom'],
 };
@@ -72,7 +74,10 @@ export class UI {
     this.menubar = h('nav', { class: 'menubar', 'aria-label': 'Main menu' });
     this.title = h('div', { class: 'doc-title' });
     const logo = h('div', { class: 'logo', html: `${icons.board}<span>Workbench<b>3D</b></span>` });
-    const topbar = h('header', { class: 'topbar' }, [logo, this.menubar, this.title]);
+    // the top bar doubles as the window's title bar in the desktop app (drag to move the window)
+    const topbar = h('header', { class: 'topbar', 'data-tauri-drag-region': '' }, [logo, this.menubar, this.title]);
+    logo.setAttribute('data-tauri-drag-region', '');
+    this.title.setAttribute('data-tauri-drag-region', '');
 
     this.toolbar = h('aside', { class: 'toolbar', 'aria-label': 'Tools' });
     this.crumbs = h('div', { class: 'crumbs' });
@@ -121,6 +126,22 @@ export class UI {
       if (this.ctxMenu && !this.ctxMenu.contains(e.target as Node)) this.closeContextMenu();
     });
     app.contextMenu = (x, y) => this.showContextMenu(x, y);
+    app.on('rename', () => {
+      const f = this.info.querySelector<HTMLInputElement>('.rename-field');
+      if (!f) return;
+      (f.closest('details') as HTMLDetailsElement | null)?.setAttribute('open', '');
+      f.focus();
+      f.select();
+    });
+    // Return/Escape inside the rename field commit or cancel, like Finder/Explorer
+    this.info.addEventListener('keydown', (e) => {
+      const t = e.target as HTMLInputElement;
+      if (!t.classList?.contains('rename-field')) return;
+      if (e.key === 'Enter') t.blur();
+      if (e.key === 'Escape') {
+        this.renderInfo();
+      }
+    });
 
     app.on('tool', () => {
       this.renderToolbar();
@@ -303,36 +324,61 @@ export class UI {
     for (const t of this.app.tools.values()) if (!known.has(t.id)) toolMenus.get('Tools')!.push(t.id);
 
     for (const name of MENU_ORDER) {
+      if (name === 'App' && !isMac) continue;
       const items: HTMLElement[] = [];
       for (const id of toolMenus.get(name) ?? []) {
         const t = this.app.tools.get(id);
         if (!t) continue;
-        const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [t.name]), h('kbd', {}, [t.shortcut ?? ''])]);
+        const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [menuLabel(t.name)]), h('kbd', {}, [t.shortcut ? kbd(t.shortcut) : ''])]);
         b.onclick = () => {
           this.closeMenu();
           this.app.setTool(t.id);
         };
         items.push(b);
       }
-      for (const c of byMenu.get(name) ?? []) {
-        if (c.separatorBefore && items.length) items.push(h('hr'));
-        const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [c.label]), h('kbd', {}, [c.shortcut ? kbd(c.shortcut) : ''])]);
+      // Apple: About first, then Settings…
+      const cmds = [...(byMenu.get(name) ?? [])].sort((a, b) => (name === 'App' ? Number(b.id === 'help.about') - Number(a.id === 'help.about') : 0));
+      for (const c of cmds) {
+        if ((c.separatorBefore || (name === 'App' && c.id === 'app.settings')) && items.length) items.push(h('hr'));
+        const label = h('span', {}, [menuLabel(c.label)]);
+        const b = h('button', { class: `menu-item${c.submenu ? ' has-sub' : ''}`, type: 'button', role: 'menuitem' }, [label, h('kbd', {}, [c.submenu ? '▸' : c.shortcut ? kbd(c.shortcut) : ''])]);
         b.onclick = () => {
+          if (c.submenu) return;
           this.closeMenu();
           this.app.runCommand(c.id);
         };
         b.dataset.cmd = c.id;
+        if (c.submenu) {
+          const sub = h('div', { class: 'menu-list submenu', role: 'menu' });
+          const wrapSub = h('div', { class: 'sub-wrap' }, [b, sub]);
+          b.onpointerenter = () => {
+            sub.innerHTML = '';
+            for (const it of c.submenu!()) {
+              if (it.separatorBefore) sub.append(h('hr'));
+              const sb = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [menuLabel(it.label)])]);
+              sb.disabled = it.enabled === false;
+              sb.onclick = () => {
+                this.closeMenu();
+                it.run();
+              };
+              sub.append(sb);
+            }
+          };
+          items.push(wrapSub);
+          continue;
+        }
         items.push(b);
       }
       if (!items.length) continue;
       const list = h('div', { class: 'menu-list', role: 'menu' }, items);
-      const btn = h('button', { class: 'menu-btn', type: 'button', 'aria-haspopup': 'true' }, [name]);
+      const btn = h('button', { class: `menu-btn${name === 'App' ? ' app-menu' : ''}`, type: 'button', 'aria-haspopup': 'true' }, [name === 'App' ? 'Workbench3D' : menuLabel(name)]);
       const wrap = h('div', { class: 'menu' }, [btn, list]);
       const open = () => {
-        // refresh enabled state when opening
+        // refresh labels and enabled state when opening
         list.querySelectorAll<HTMLButtonElement>('[data-cmd]').forEach((el) => {
           const c = this.app.commands.get(el.dataset.cmd!);
           el.disabled = !!(c?.enabled && !c.enabled());
+          if (c?.dynamicLabel) el.querySelector('span')!.textContent = menuLabel(c.dynamicLabel());
         });
         this.closeMenu();
         wrap.classList.add('open');
@@ -372,7 +418,9 @@ export class UI {
       if (!c.context || (c.enabled && !c.enabled())) continue;
       if (lastMenu && c.menu !== lastMenu) items.push(h('hr'));
       lastMenu = c.menu ?? '';
-      const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [c.label]), h('kbd', {}, [c.shortcut ? kbd(c.shortcut) : ''])]);
+      // Mac context menus never show shortcuts (they belong in the menu bar); Windows menus teach them
+      const label = menuLabel(c.dynamicLabel?.() ?? c.label);
+      const b = h('button', { class: 'menu-item', type: 'button', role: 'menuitem' }, [h('span', {}, [label]), h('kbd', {}, [!isMac && c.shortcut ? kbd(c.shortcut) : ''])]);
       b.onclick = () => {
         this.closeContextMenu();
         app.runCommand(c.id);
@@ -405,8 +453,8 @@ export class UI {
         const b = h('button', {
           class: `tool-btn${this.app.tool?.id === id ? ' active' : ''}`,
           type: 'button',
-          title: `${t.name}${t.shortcut ? ` (${t.shortcut})` : ''}`,
-          'aria-label': t.name,
+          title: withShortcut(menuLabel(t.name), t.shortcut),
+          'aria-label': menuLabel(t.name),
           html: t.icon ?? `<span>${t.name[0]}</span>`,
         });
         b.onclick = () => this.app.setTool(id);
@@ -414,9 +462,15 @@ export class UI {
       }
       this.toolbar.append(div);
     }
-    const ext = h('button', { class: 'tool-btn', type: 'button', title: 'Zoom Extents (Shift+Z)', 'aria-label': 'Zoom Extents', html: icons.extents });
+    const ext = h('button', { class: 'tool-btn', type: 'button', title: withShortcut(menuLabel('Zoom Extents'), 'Shift+Z'), 'aria-label': menuLabel('Zoom Extents'), html: icons.extents });
     ext.onclick = () => this.app.runCommand('view.extents');
     this.toolbar.append(h('div', { class: 'tool-group' }, [ext]));
+    // Windows apps keep Settings one click away (the gear at the bottom); a Mac uses ⌘, and the app menu
+    if (isWindows) {
+      const gear = h('button', { class: 'tool-btn settings-btn', type: 'button', title: 'Settings', 'aria-label': 'Settings', html: icons.settings });
+      gear.onclick = () => this.app.runCommand('app.settings');
+      this.toolbar.append(h('div', { class: 'tool-group bottom' }, [gear]));
+    }
   }
 
   // ---------- status ----------
@@ -482,7 +536,7 @@ export class UI {
 
     if (groups.length === 1 && !sel.faces.size && !sel.edges.size) {
       const g = groups[0];
-      const name = h('input', { value: g.name, 'aria-label': 'Group name' });
+      const name = h('input', { value: g.name, 'aria-label': 'Group name', class: 'rename-field' });
       name.onchange = () => {
         const v = name.value.trim() || 'Group';
         app.doc.transact('Rename', () => (app.doc.findGroup(g.id)!.name = v));
@@ -650,7 +704,7 @@ export class UI {
         <li>Press <kbd>R</kbd> and click twice on the ground to draw a rectangle. Type <kbd>24, 48</kbd> then Enter for exact sizes.</li>
         <li>Press <kbd>P</kbd>, click the rectangle, move up and click to push/pull it into a solid.</li>
         <li>Select it all (<kbd>${kbd('Mod+A')}</kbd>) and make a group (<kbd>${kbd('Mod+G')}</kbd>) so it stays a separate part.</li>
-        <li>Orbit with middle-drag or ${navigator.platform.includes('Mac') ? '⌥' : 'Alt'}-drag, pan with right-drag, scroll to zoom.</li>
+        <li>Orbit with middle-drag or ${isMac ? '⌥' : 'Alt'}-drag, pan with right-drag, scroll to zoom.</li>
       </ol>
       <p>Try <b>Add-ons → Insert Lumber</b> or <b>Insert Steel</b> for ready-made parts, and <b>Cut List</b> when you're done.</p>`,
     });

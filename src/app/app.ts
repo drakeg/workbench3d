@@ -19,6 +19,10 @@ export interface Command {
   separatorBefore?: boolean;
   /** Also show in the right-click menu when enabled. */
   context?: boolean;
+  /** A label that follows the state, e.g. "Undo Push/Pull" or "Hide Grid". */
+  dynamicLabel?: () => string;
+  /** Items of a submenu (e.g. Open Recent). The command itself is then just the parent. */
+  submenu?: () => { label: string; run: () => void; enabled?: boolean; separatorBefore?: boolean }[];
 }
 
 export interface Selection {
@@ -27,9 +31,10 @@ export interface Selection {
   groups: Set<number>;
 }
 
-type AppEvent = 'selection' | 'tool' | 'context' | 'change' | 'vcb' | 'hint' | 'commands';
+type AppEvent = 'selection' | 'tool' | 'context' | 'change' | 'vcb' | 'hint' | 'commands' | 'rename' | 'settings';
 
-export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+export { isMac } from './os';
+import { isMac } from './os';
 
 /**
  * Ties the document, viewport, tools and commands together.
@@ -433,7 +438,13 @@ export class App {
     this.emit('commands');
   }
 
+  private lastRun = { id: '', t: 0 };
+
   runCommand(id: string): void {
+    // the native menu and the page can both see the same key press; run it once
+    const now = performance.now();
+    if (this.lastRun.id === id && now - this.lastRun.t < 150) return;
+    this.lastRun = { id, t: now };
     const c = this.commands.get(id);
     if (!c || (c.enabled && !c.enabled())) return;
     Promise.resolve(c.run()).catch((err) => this.toast(String(err?.message ?? err), 'error'));
@@ -523,16 +534,21 @@ export class App {
   /** Match a keyboard event against a shortcut string like "Mod+Shift+Z". */
   static matches(e: KeyboardEvent, shortcut: string): boolean {
     const parts = shortcut.split('+');
-    const key = parts.pop()!.toLowerCase();
+    let key = parts.pop()!.toLowerCase();
+    if (key === '' && shortcut.endsWith('+')) key = '+';
     const mods = new Set(parts.map((p) => p.toLowerCase()));
     const mod = isMac ? e.metaKey : e.ctrlKey;
     if (mods.has('mod') !== mod) return false;
     if (mods.has('shift') !== e.shiftKey) return false;
     if (mods.has('alt') !== e.altKey) return false;
-    if (!isMac && !mods.has('mod') && e.ctrlKey) return false;
-    if (isMac && !mods.has('mod') && e.metaKey) return false;
+    if (isMac) {
+      if (mods.has('ctrl') !== e.ctrlKey) return false;
+      if (!mods.has('mod') && e.metaKey) return false;
+    } else if (!mods.has('mod') && e.ctrlKey) return false;
     const k = e.key.toLowerCase();
     if (key === 'delete') return k === 'delete' || k === 'backspace';
+    const codes: Record<string, string> = { '/': 'slash', ',': 'comma', '.': 'period', '?': 'slash' };
+    if (codes[key] && e.code.toLowerCase() === codes[key]) return true;
     return k === key || e.code.toLowerCase() === `key${key}`;
   }
 
@@ -559,6 +575,14 @@ export class App {
           return;
         }
       }
+      return;
+    }
+
+    // Shift+F10 or the Menu key opens the context menu at the pointer (Windows convention)
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      e.preventDefault();
+      const r = this.vp.dom.getBoundingClientRect();
+      this.contextMenu?.(r.left + this.lastPointer.x, r.top + this.lastPointer.y);
       return;
     }
 
@@ -634,6 +658,11 @@ export class App {
     this.shiftLock = dir.normalize();
     this.setHint('Direction locked while Shift is held.');
   }
+
+  /** Set by the file commands: open a model from text (drag and drop, Finder/Explorer). */
+  openFileText: (text: string, name: string, path?: string) => Promise<void> = async () => {};
+  openFilePath: (path: string) => Promise<void> = async () => {};
+  saveCurrent: () => Promise<void> = async () => {};
 
   /** Set by the UI: shows the right-click menu. */
   contextMenu: ((clientX: number, clientY: number) => void) | null = null;
