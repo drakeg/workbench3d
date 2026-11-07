@@ -2,5 +2,18 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "One PR for all GitHub Actions and CI Node updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "CI workflows"
+    },
+    {
+      "description": "One PR for npm patch and minor updates",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm minor and patch"
+    }
   ]
 }
