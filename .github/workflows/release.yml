@@ -1,16 +1,46 @@
-# Builds desktop installers for macOS (Apple Silicon + Intel), Windows and Linux.
-# Push a tag like v0.1.0 (or run it by hand) and a draft GitHub Release appears with the installers attached.
+# Automatic releases.
+# Whenever main has a version in package.json that hasn't been released yet, this builds the
+# desktop installers (macOS Apple Silicon + Intel, Windows, Linux), creates the tag v<version>,
+# and publishes the GitHub Release once every build has succeeded.
+#
+# To release: bump "version" in package.json (e.g. `npm version minor --no-git-tag-version`)
+# in a PR and merge it. Nothing else to do. You can also run it by hand from the Actions tab.
 name: Release desktop app
 on:
   push:
-    tags: ['v*']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "v$VERSION is already released; nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Releasing v$VERSION"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: version
+    if: needs.version.outputs.release == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -26,9 +56,9 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -42,14 +72,35 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # For signed/notarized macOS builds later, add APPLE_CERTIFICATE, APPLE_ID, etc. as repo secrets.
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: 'Workbench3D v__VERSION__'
-          releaseBody: 'Download the installer for your system below. macOS: right-click the app → Open the first time (the build is not notarized yet).'
+          tagName: v${{ needs.version.outputs.version }}
+          releaseName: Workbench3D v${{ needs.version.outputs.version }}
+          releaseCommitish: ${{ github.sha }}
+          releaseBody: |
+            Download the installer for your system:
+            - **Mac (Apple Silicon, M1 and later):** `Workbench3D_${{ needs.version.outputs.version }}_aarch64.dmg`
+            - **Mac (Intel):** `Workbench3D_${{ needs.version.outputs.version }}_x64.dmg`
+            - **Windows:** `Workbench3D_${{ needs.version.outputs.version }}_x64-setup.exe`
+            - **Linux:** `.AppImage`, `.deb` or `.rpm`
+
+            macOS: the first time, right-click the app and choose Open (the build isn't notarized yet).
+          # stays a draft until every platform has built, then the publish job makes it public
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false --latest --tag "v$VERSION" --target "$GITHUB_SHA"
+          gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '.url, (.assets[].name)'

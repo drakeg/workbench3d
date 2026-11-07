@@ -49,6 +49,12 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
 - Lengths are inches internally. Convert only at the UI edge with `parseLength` / `formatLength`.
 - Original work only. Don't copy code, icons, textures or models from proprietary software. If you port code from another open-source project, its license must be MIT-compatible and credited.
 
+## Releases
+
+Releases are automatic. When `main` has a `version` in `package.json` that hasn't been released yet, the **Release desktop app** workflow builds the macOS, Windows and Linux installers, tags `v<version>` and publishes the release once every build succeeds.
+
+To ship a release, bump the version in a PR (`npm run release:patch` or `npm run release:minor`) and merge it. The desktop app reads its version from `package.json`, so that's the only number to change.
+
 ## License
 
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE).
