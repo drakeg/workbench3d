@@ -6,6 +6,7 @@
 # Usage: ./build.sh            release build, install
 #        ./build.sh --debug    debug build, install
 #        ./build.sh --open     install, then quit the running copy and open the new one
+#        APP_DIR=dist ./build.sh   put the .app in another folder (the release workflow)
 set -euo pipefail
 here=${0:A:h}
 name="Workbench3D"
@@ -37,12 +38,16 @@ if [[ -n "$stale" ]]; then
   exit 1
 fi
 
-app="$HOME/Applications/$name.app"
-mkdir -p "$HOME/Applications"
+# The version comes from the repo's package.json, so the web, desktop and Mac apps share it.
+version=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$here/../package.json" 2>/dev/null | head -1)
+[[ -n "$version" ]] || version=0.0.0
+dest="${APP_DIR:-$HOME/Applications}"
+mkdir -p "$dest"
+app="${dest:A}/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin" "$app/Contents/MacOS/$name"
-sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
+sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__VERSION__/$version/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
 # The icon: Icon/AppIcon.icon -> Resources/Assets.car + AppIcon.icns, rebuilt when it changed.
 if [[ -d "$here/Icon/AppIcon.icon" ]]; then
   car="$here/Resources/Assets.car"
@@ -53,7 +58,7 @@ if [[ -d "$here/Icon/AppIcon.icon" ]]; then
 fi
 xattr -cr "$app"
 codesign --force --sign "$identity" "$app" 2>&1 | grep -v "replacing existing signature" || true
-echo "installed $app (signed: ${identity})"
+echo "installed $app $version (signed: ${identity})"
 
 if [[ " $* " == *" --open "* ]]; then
   osascript -e "quit app \"$name\"" 2>/dev/null || true
