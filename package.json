@@ -12,7 +12,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
-    "smoke": "node scripts/smoke.mjs && node scripts/smoke-platform.mjs"
+    "smoke": "node scripts/smoke.mjs && node scripts/smoke-platform.mjs",
+    "release:patch": "npm version patch --no-git-tag-version",
+    "release:minor": "npm version minor --no-git-tag-version"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
