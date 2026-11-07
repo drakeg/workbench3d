@@ -41,6 +41,13 @@ jobs:
           for f in $(ls -t ~/Library/Logs/DiagnosticReports/Workbench3D* 2>/dev/null | head -1); do
             echo "== $f"; python3 -c "import json,sys; t=open(sys.argv[1]).read().split('\n',1)[1]; d=json.loads(t); th=[x for x in d['threads'] if x.get('triggered')][0]; print(d.get('exception')); [print(fr.get('imageIndex'), d['usedImages'][fr['imageIndex']].get('name'), fr.get('symbol'), fr.get('sourceFile'), fr.get('sourceLine')) for fr in th['frames'][:40]]" "$f" || head -c 6000 "$f"
           done
+      - name: Disk image (as the release makes it)
+        run: |
+          APP_DIR=dist ./build.sh
+          mkdir -p dmg && cp -R dist/Workbench3D.app dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname Workbench3D -srcfolder dmg -ov -format UDZO Workbench3D_test_mac.dmg
+          ls -la Workbench3D_test_mac.dmg
+          plutil -p dist/Workbench3D.app/Contents/Info.plist | grep -E "ShortVersion|DocumentTypes|wb3d"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

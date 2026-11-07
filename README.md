@@ -30,9 +30,9 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
 
 **Desktop app:** download the installer for your system from the [Releases page](https://github.com/drakeg/workbench3d/releases). It follows each platform's conventions:
 
-- **Mac:** a real menu bar in Apple's order (Undo names the action, Open Recent, Window menu), Settings in its own window with ⌘,, traffic lights in the toolbar, system Dark Mode, double-click `.wb3d` files in Finder to open them, and it only asks about saving when there are unsaved changes.
+- **Mac:** a native app for Apple silicon (M1 and later) on macOS 26 or later, written in Swift with a Metal 3D view (source in [`mac/`](mac)). Each model is its own document window with autosave and versions, Open Recent, and full undo. Trackpad gestures: scroll to pan, pinch to zoom, Option-scroll to orbit. It opens the same `.wb3d` files as the web app.
 - **Windows:** Windows 11 type and spacing, sentence-case menus, Settings in the File menu and the toolbar gear (with an app theme choice), F1 help, F2 rename, Shift+F10 context menu, light/dark theme, and `.wb3d` files open from Explorer.
-On macOS the app is not yet signed with an Apple Developer ID. The first time you open it, right-click (or Control-click) the app → **Open** → **Open**.
+On macOS the app is not yet notarized by Apple. The first time you open it, macOS blocks it: go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 **In the browser:** run it locally (below) or use the GitHub Pages build if it's enabled for the repo. In Chrome or Edge you can install it as an app from the address bar.
 
@@ -49,7 +49,8 @@ Desktop app (needs [Rust](https://rustup.rs) and the [Tauri prerequisites](https
 
 ```bash
 npm run tauri dev    # run the desktop app
-npm run tauri build  # make an installer (.dmg/.app on macOS, .msi/.exe on Windows, .deb/.AppImage on Linux)
+npm run tauri build  # make an installer (.msi/.exe on Windows, .deb/.AppImage on Linux)
+cd mac && ./build.sh --open   # build and open the native Mac app (needs Xcode 26)
 ```
 
 ## Quick start
