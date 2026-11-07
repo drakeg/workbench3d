@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "smoke": "node scripts/smoke.mjs && node scripts/smoke-platform.mjs",
+    "version": "node scripts/sync-version.mjs",
     "release:patch": "npm version patch --no-git-tag-version",
     "release:minor": "npm version minor --no-git-tag-version"
   },

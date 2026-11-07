@@ -26,6 +26,8 @@ jobs:
       release: ${{ steps.v.outputs.release }}
     steps:
       - uses: actions/checkout@v7
+      - name: Same version in package.json and Cargo
+        run: node scripts/sync-version.mjs --check
       - id: v
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -98,6 +100,13 @@ jobs:
       - name: Build the app
         working-directory: mac
         run: APP_DIR=dist ./build.sh
+      - name: The app's version matches the tag
+        working-directory: mac
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          APP=$(plutil -extract CFBundleShortVersionString raw dist/Workbench3D.app/Contents/Info.plist)
+          [[ "$APP" == "$VERSION" ]] || { echo "app says $APP, release is v$VERSION"; exit 1; }
       - name: Self-test
         working-directory: mac
         timeout-minutes: 5
