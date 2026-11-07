@@ -1,0 +1,49 @@
+# Native Mac app (mac/): builds for Apple silicon, runs the engine tests, the in-app self-test,
+# and takes snapshots of the window (uploaded as an artifact so changes can be reviewed).
+name: Mac app
+on:
+  push:
+    branches: [main]
+    paths: ['mac/**', '.github/workflows/mac.yml']
+  pull_request:
+    paths: ['mac/**', '.github/workflows/mac.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use the newest Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+          swift --version
+          sw_vers
+          uname -m
+      - name: Build (arm64)
+        run: swift build -c release --arch arm64 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+      - name: Engine tests
+        run: swift test 2>&1 | tail -60; exit ${PIPESTATUS[0]}
+      - name: Build the app bundle
+        run: ./build.sh
+      - name: Self-test
+        timeout-minutes: 5
+        run: tools/selftest.sh
+      - name: Snapshots
+        timeout-minutes: 5
+        run: tools/snap.sh; ls -la /tmp/Workbench3D-shots
+      - name: Crash reports
+        if: failure()
+        run: |
+          for f in $(ls -t ~/Library/Logs/DiagnosticReports/Workbench3D* 2>/dev/null | head -1); do
+            echo "== $f"; python3 -c "import json,sys; t=open(sys.argv[1]).read().split('\n',1)[1]; d=json.loads(t); th=[x for x in d['threads'] if x.get('triggered')][0]; print(d.get('exception')); [print(fr.get('imageIndex'), d['usedImages'][fr['imageIndex']].get('name'), fr.get('symbol'), fr.get('sourceFile'), fr.get('sourceLine')) for fr in th['frames'][:40]]" "$f" || head -c 6000 "$f"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mac-snapshots
+          path: /tmp/Workbench3D-shots
+          if-no-files-found: warn
