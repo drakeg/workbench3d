@@ -51,9 +51,11 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
 
 ## Releases
 
-Releases are automatic. When `main` has a `version` in `package.json` that hasn't been released yet, the **Release desktop app** workflow builds the macOS, Windows and Linux installers, tags `v<version>` and publishes the release once every build succeeds.
+Releases are automatic. When `main` has a `version` in `package.json` that hasn't been released yet, the **Release desktop app** workflow builds the installers (the native Mac app as a .dmg; Windows and Linux with Tauri), tags `v<version>` on the commit it built and publishes the release once every build succeeds.
 
-To ship a release, bump the version in a PR (`npm run release:patch` or `npm run release:minor`) and merge it. The desktop app reads its version from `package.json`, so that's the only number to change.
+To ship a release, bump the version in a PR (`npm run release:patch` or `npm run release:minor`) and merge it. Every app takes its version from `package.json`: the web app and the Mac app read it directly, and `npm version` copies it into `src-tauri/Cargo.toml` and `Cargo.lock`. CI fails if they ever disagree, and the release checks that the Mac app's version matches the tag.
+
+Don't create `v*` tags by hand: the workflow makes the tag itself, on the exact commit it builds, so the tag and the app's version always match.
 
 ## License
 
