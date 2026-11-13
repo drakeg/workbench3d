@@ -20,7 +20,7 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
 - **Built-in add-ons:**
   - **Lumber:** real dressed sizes (a 2x4 is 1½" × 3½"), plywood and MDF sheets.
   - **Steel Profiles:** square, rectangular and round tube, angle, channel, flat bar, round bar, by gauge.
-  - **Cut List:** every part with T × W × L, identical parts grouped, board feet, CSV export.
+  - **Cut List:** every part with T × W × L, identical parts grouped, board feet, CSV export. The Layout tab fits the parts onto 4×8 sheets, boards or 20' steel sticks with your saw kerf, an edge trim and the grain direction, shows how many to buy, and prints a cutting plan (PDF) with a diagram of every sheet and board.
 - **Views:** standard views, perspective or parallel projection, X-ray, zoom extents.
 - **Files:** `.wb3d` (JSON, diff-friendly), export STL (for 3D printing, in mm), OBJ and PNG. Autosave keeps your work if the tab closes.
 - **Opens SketchUp files.** File → Import… (or drag a `.skp` onto the window) brings in SketchUp 2013 and later models with their groups, components, colours, tags, scenes and guides, read on your computer by the MIT-licensed [openskp](https://www.npmjs.com/package/openskp) library. Textures come in as plain colours for now.

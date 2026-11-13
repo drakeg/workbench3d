@@ -44,6 +44,7 @@ Axes: **red = X**, **green = Y**, **blue = Z (up)**.
 | `api.THREE` | The three.js module, for `Vector3`, `Matrix4`… |
 | `api.doc` | The `WorkbenchDocument`: `root` group, `units`, `bounds()`, `findGroup(id)`, `newGroup(name)`. |
 | `api.context()` | The group being edited (the root if none). |
+| `api.modelName()` | The open model's file name without `.wb3d` ("Untitled" if never saved), for titles and download names. |
 | `api.selection()` | `{ faces, edges, groups }` in the current context. |
 | `api.setSelection({ faces?, edges?, groups? })` | Select by id. |
 | `api.setTool(id)` | Switch tools (`select`, `line`, `rect`, `circle`, `pushpull`, `move`, `rotate`, `tape`, `eraser`, `paint`, `orbit`, `pan`, `zoom`). |
@@ -53,7 +54,7 @@ Axes: **red = X**, **green = Y**, **blue = Z (up)**.
 | `api.registerCommand({ id, label, menu?, shortcut?, run, enabled?, context? })` | Adds a menu item. Default menu is **Add-ons**. Shortcuts look like `"Mod+Shift+K"` (Mod = ⌘ on Mac, Ctrl elsewhere). `context: true` also shows it in the right-click menu whenever `enabled()` returns true. |
 | `api.registerTool(tool)` | Adds a toolbar tool. See below. |
 | `api.ui.form(title, fields, submitLabel?)` | Shows a form, resolves with values or `null` if cancelled. Field types: `length`, `number`, `text`, `select`, `checkbox`, `color`. |
-| `api.ui.dialog(title, htmlOrElement, buttons?)` | A simple modal. Resolves with the clicked button's label. |
+| `api.ui.dialog(title, htmlOrElement, buttons?, { wide? })` | A simple modal. Resolves with the clicked button's label; the last button is the default (Return). `wide` for tables and drawings. |
 | `api.ui.toast(message, 'info' \| 'error')` | A short notice. |
 | `api.ui.download(fileName, data)` | Save text or bytes. |
 | `api.on('change' \| 'selection', fn)` | Subscribe; returns an unsubscribe function. |
