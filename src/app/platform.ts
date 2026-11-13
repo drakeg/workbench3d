@@ -111,6 +111,38 @@ export async function openFile(filters: FileFilter[]): Promise<{ target: FileTar
   });
 }
 
+/** Let the user pick a file and read it as bytes (for imports such as SketchUp .skp). */
+export async function openBinaryFile(filters: FileFilter[]): Promise<{ name: string; bytes: ArrayBuffer } | null> {
+  if (isDesktop) {
+    const dialog = await import('@tauri-apps/plugin-dialog');
+    const fs = await import('@tauri-apps/plugin-fs');
+    const path = await dialog.open({ multiple: false, directory: false, filters });
+    if (!path || Array.isArray(path)) return null;
+    const data = await fs.readFile(path);
+    return { name: path.split(/[\\/]/).pop() ?? 'model', bytes: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer };
+  }
+  const w = window as PickerWindow;
+  if (w.showOpenFilePicker) {
+    try {
+      const [handle] = await w.showOpenFilePicker({ types: pickerTypes(filters), multiple: false });
+      const file = await handle.getFile();
+      return { name: file.name, bytes: await file.arrayBuffer() };
+    } catch (e) {
+      if ((e as DOMException)?.name === 'AbortError') return null;
+    }
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = filters.flatMap((f) => f.extensions.map((e) => `.${e}`)).join(',');
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      resolve(file ? { name: file.name, bytes: await file.arrayBuffer() } : null);
+    };
+    input.click();
+  });
+}
+
 /** localStorage that never throws (it can be unavailable in some embeds and private modes). */
 export const store = {
   get(key: string): string | null {

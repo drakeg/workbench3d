@@ -38,6 +38,8 @@ Rough priorities, open to discussion in issues. ✅ = done in v0.1.
 ## Import / export
 - ✅ STL, OBJ, PNG export; `.wb3d` save/open
 - [ ] glTF/GLB export, DXF export (CNC/laser), SVG of faces
+- ✅ SketchUp `.skp` import (2013 and later): groups, components, colours, tags, scenes, guides
+- [ ] SketchUp import: textures, soft/smooth edges, text and dimensions
 - [ ] STL/OBJ import
 - [ ] 3MF export for 3D printing
 

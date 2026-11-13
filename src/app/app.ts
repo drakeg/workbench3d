@@ -662,6 +662,8 @@ export class App {
   /** Set by the file commands: open a model from text (drag and drop, Finder/Explorer). */
   openFileText: (text: string, name: string, path?: string) => Promise<void> = async () => {};
   openFilePath: (path: string) => Promise<void> = async () => {};
+  /** Import another format (SketchUp .skp) into the open model. */
+  importFile: (name: string, bytes: ArrayBuffer) => Promise<void> = async () => {};
   saveCurrent: () => Promise<void> = async () => {};
 
   /** Set by the UI: shows the right-click menu. */

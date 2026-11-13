@@ -117,7 +117,7 @@ export async function setupDesktop(app: App, toolMenus: Record<string, string[]>
   }
 }
 
-/** Open .wb3d files dropped on the window (browser and desktop). */
+/** Open .wb3d files and import .skp files dropped on the window (browser and desktop). */
 export function enableFileDrop(app: App, target: HTMLElement): void {
   const isFileDrag = (e: DragEvent) => [...(e.dataTransfer?.types ?? [])].includes('Files');
   target.addEventListener('dragover', (e) => {
@@ -130,9 +130,15 @@ export function enableFileDrop(app: App, target: HTMLElement): void {
     target.classList.remove('drop-target');
     if (!isFileDrag(e)) return;
     e.preventDefault();
-    const file = [...(e.dataTransfer?.files ?? [])].find((f) => /\.wb3d$/i.test(f.name));
+    const files = [...(e.dataTransfer?.files ?? [])];
+    const skp = files.find((f) => /\.skp$/i.test(f.name));
+    if (skp) {
+      await app.importFile(skp.name, await skp.arrayBuffer());
+      return;
+    }
+    const file = files.find((f) => /\.wb3d$/i.test(f.name));
     if (!file) {
-      app.toast('Drop a Workbench3D model (.wb3d) to open it.', 'error');
+      app.toast('Drop a Workbench3D model (.wb3d) to open it, or a SketchUp model (.skp) to import it.', 'error');
       return;
     }
     await app.openFileText(await file.text(), file.name);

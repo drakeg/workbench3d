@@ -3,12 +3,14 @@ import { App, isMac } from './app';
 import { isDesktopApp, isWindows } from './os';
 import { copySelection, hasClip, paste } from './clipboard';
 import { settings } from './settings';
-import { FileTarget, openFile, saveFile, store } from './platform';
+import { FileTarget, openBinaryFile, openFile, saveFile, store } from './platform';
+import { importSkpModel, parseSkpFile } from '../core/importSkp';
 import { dialog, form } from '../ui/dialogs';
 import { connected } from '../tools/select';
 import { Group } from '../core/document';
 import { AddOnManager } from '../plugins/api';
 
+const IMPORT_FILTER = [{ name: 'SketchUp model', extensions: ['skp'] }];
 const MODEL_FILTER = [{ name: 'Workbench3D model', extensions: ['wb3d'] }];
 export const AUTOSAVE_KEY = 'workbench3d.autosave';
 const RECENT_KEY = 'workbench3d.recent';
@@ -100,6 +102,16 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: () => save(false) },
     // Mac apps duplicate a document rather than "Save As"
     { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: () => save(true) },
+    {
+      id: 'file.import',
+      label: 'Import…',
+      menu: 'File',
+      separatorBefore: true,
+      run: async () => {
+        const r = await openBinaryFile(IMPORT_FILTER);
+        if (r) await app.importFile(r.name, r.bytes);
+      },
+    },
     {
       id: 'file.exportSTL',
       label: 'Export STL (3D printing)…',
@@ -652,6 +664,31 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     }
   };
   app.openFilePath = openPath;
+
+  // Import a SketchUp file into the open model, as one group, in the group being edited.
+  app.importFile = async (name: string, bytes: ArrayBuffer) => {
+    if (!/\.skp$/i.test(name)) {
+      app.toast(`Workbench3D can import SketchUp files (.skp). ${name} isn't one.`, 'error');
+      return;
+    }
+    app.toast(`Importing ${name}…`);
+    try {
+      const base = name.replace(/\.skp$/i, '');
+      const model = await parseSkpFile(bytes);
+      const r = app.doc.transact(`Import ${base}`, () => importSkpModel(app.doc, model, base, app.context));
+      app.setSelection({ groups: [r.group.id] });
+      app.vp.zoomExtents(app.modelBounds());
+      const n = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+      const parts = [n(r.faces, 'face'), n(r.groups, 'group or component', 'groups and components')];
+      if (r.tags) parts.push(n(r.tags, 'tag'));
+      if (r.scenes) parts.push(n(r.scenes, 'scene'));
+      let msg = `Imported ${name}: ${parts.join(', ')}.`;
+      if (r.skipped.length) msg += ` Not imported yet: ${r.skipped.join(', ')}.`;
+      app.toast(msg);
+    } catch (e) {
+      app.toast(`Couldn't import ${name}: ${(e as Error).message ?? e}`, 'error');
+    }
+  };
   app.saveCurrent = () => save(false);
 
   function hasGeometrySelection(): boolean {
