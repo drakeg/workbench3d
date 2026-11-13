@@ -21,6 +21,7 @@
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.4",
     "@tauri-apps/plugin-fs": "^2.7.1",
+    "openskp": "^1.5.0",
     "three": "^0.187.0"
   },
   "devDependencies": {

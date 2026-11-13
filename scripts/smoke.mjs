@@ -512,5 +512,29 @@ await page.keyboard.press('Shift+Z');
 await page.waitForTimeout(150);
 await page.screenshot({ path: `${out}/section.png` });
 
+// SketchUp import (the parser loads on first use)
+await reset();
+const skp = (await import('node:fs')).readFileSync(new URL('../tests/fixtures/sample.skp', import.meta.url)).toString('base64');
+await page.evaluate(async (b64) => {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  await window.workbench.importFile('sample.skp', bytes.buffer);
+}, skp);
+const imported = await page.evaluate(() => {
+  const a = window.workbench;
+  const top = a.doc.root.children[0];
+  return {
+    name: top?.name,
+    children: top?.children.length,
+    components: a.doc.components.length,
+    tags: a.doc.tags.map((t) => t.name),
+    selected: [...a.selection.groups],
+    id: top?.id,
+  };
+});
+check('imports a SketchUp file as one group with its components and tags',
+  imported.name === 'sample' && imported.children === 3 && imported.components === 1 && imported.tags.includes('Cabinets') && imported.selected[0] === imported.id, imported);
+await page.waitForTimeout(150);
+await page.screenshot({ path: `${out}/skp-import.png` });
+
 check('no page errors', errors.length === 0, errors);
 await browser.close();
