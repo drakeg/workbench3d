@@ -61,6 +61,8 @@ export interface WorkbenchAPI {
     format(inches: number): string;
     settings(): UnitSettings;
   };
+  /** The open model's file name without the extension ("Untitled" if never saved). */
+  modelName(): string;
   /** The group currently being edited (the model root if none). */
   context(): Group;
   selection(): { faces: number[]; edges: string[]; groups: Group[] };
@@ -76,7 +78,8 @@ export interface WorkbenchAPI {
   createExtrusion(o: ExtrusionOptions): Group;
   ui: {
     form(title: string, fields: FormField[], submitLabel?: string): Promise<Record<string, unknown> | null>;
-    dialog(title: string, content: string | HTMLElement, buttons?: string[]): Promise<string | null>;
+    /** A dialog; the last button is the default (Return). `wide` for tables and drawings. */
+    dialog(title: string, content: string | HTMLElement, buttons?: string[], opts?: { wide?: boolean }): Promise<string | null>;
     toast(message: string, kind?: 'info' | 'error'): void;
     download(fileName: string, data: string | ArrayBuffer): void;
   };
@@ -110,6 +113,7 @@ export function createAPI(app: App, addOnId = 'core'): WorkbenchAPI {
       format: (i) => formatLength(i, units()),
       settings: () => ({ ...units() }),
     },
+    modelName: () => app.fileName.replace(/\.wb3d$/i, '') || 'Untitled',
     context: () => app.context,
     selection: () => ({ faces: [...app.selection.faces], edges: [...app.selection.edges], groups: app.selectedGroups() }),
     setSelection: (s) => app.setSelection(s),
@@ -146,7 +150,7 @@ export function createAPI(app: App, addOnId = 'core'): WorkbenchAPI {
     },
     ui: {
       form: (title, fields, submitLabel) => form(title, fields, units(), submitLabel),
-      dialog: (title, content, buttons) => dialog(title, content, buttons),
+      dialog: (title, content, buttons, opts) => dialog(title, content, buttons, opts?.wide),
       toast: (m, k) => app.toast(m, k),
       download(name, data) {
         const url = URL.createObjectURL(new Blob([data]));

@@ -27,7 +27,8 @@ Rough priorities, open to discussion in issues. ✅ = done in v0.1.
 - [ ] Section fills (caps on cut faces), scene transitions for presentations/video
 - ✅ Tags / layers with visibility
 - [ ] Printable shop drawings: orthographic views with dimensions to PDF
-- [ ] Cut list → sheet/board layout optimizer (plywood nesting, 1D stock cutting for steel)
+- ✅ Cut list layout: parts on sheets and boards with saw kerf, trim and grain; steel cut from 20' sticks; printable PDF cutting plan
+- [ ] Cut list: edge banding, offcut reuse across projects, cost estimate from stock prices, part labels
 
 ## Trade-specific add-ons
 - [ ] Woodworking: joinery (mortise & tenon, dado, dovetail), hardware library, edge banding

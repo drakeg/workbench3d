@@ -751,6 +751,64 @@ table.shortcuts td:last-child {
   white-space: nowrap;
 }
 
+/* Cut list: parts and layout */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.segmented button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 14px;
+}
+.segmented button[aria-selected='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.cut-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cut-settings label,
+.cut-group-head label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.cut-group {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.cut-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.cut-group-head strong {
+  margin-right: 4px;
+}
+.cut-group .error {
+  color: #c62828;
+  margin: 4px 0;
+}
+.cut-sheet {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-family: var(--font);
+}
+
 @media (max-width: 820px) {
   .app {
     grid-template-columns: 52px 1fr;

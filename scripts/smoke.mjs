@@ -98,6 +98,14 @@ await page.waitForSelector('table.cutlist');
 const rows = await page.$$eval('table.cutlist tbody tr', (r) => r.map((x) => x.textContent));
 check('cut list has 3 parts', rows.length === 3, rows);
 await page.screenshot({ path: `${out}/cutlist.png` });
+await page.click('[role=tab][data-tab=layout]');
+const sheets = await page.$$eval('svg.cut-sheet', (s) => s.length);
+check('cut list lays the parts out on stock', sheets >= 2, sheets);
+await page.screenshot({ path: `${out}/cutlist-layout.png` });
+const [pdfDownload] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer button.primary')]);
+const pdfHead = (await (await import('node:fs')).promises.readFile(await pdfDownload.path())).subarray(0, 8).toString();
+check('cutting plan downloads as a PDF', pdfDownload.suggestedFilename() === 'cutting-plan.pdf' && pdfHead === '%PDF-1.4', { name: pdfDownload.suggestedFilename(), pdfHead });
+await (await import('node:fs')).promises.copyFile(await pdfDownload.path(), `${out}/cutting-plan.pdf`);
 await page.click('.modal-footer button:not(.primary)');
 
 await page.keyboard.press('Shift+Z');
