@@ -1,6 +1,6 @@
 {
   "name": "workbench3d",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Open-source 3D modeler for woodworking, welding, home and RV interior design. Push/pull modeling in the browser or as a desktop app.",
   "license": "MIT",
   "type": "module",
