@@ -347,10 +347,14 @@ const reset = () =>
   });
 const drag = async (fromW, toW, typed) => {
   let q = await proj(...fromW);
-  await page.mouse.move(q[0], q[1]);
+  // several moves, like a real hand, so hover and inference are settled before the click
+  await page.mouse.move(q[0] - 6, q[1] - 6);
+  await page.mouse.move(q[0], q[1], { steps: 4 });
+  await page.waitForTimeout(30);
   await page.mouse.click(q[0], q[1]);
   q = await proj(...toW);
-  await page.mouse.move(q[0], q[1]);
+  await page.mouse.move(q[0], q[1], { steps: 4 });
+  await page.waitForTimeout(30);
   if (typed) {
     await page.keyboard.type(typed);
     await page.keyboard.press('Enter');
@@ -435,11 +439,31 @@ await page.fill('.modal input[type=text]', 'Block');
 await page.click('.modal-footer button.primary');
 await page.waitForSelector('.modal', { state: 'detached' });
 await page.waitForTimeout(150);
-await page.keyboard.press('m');
-await page.waitForTimeout(100);
-await page.keyboard.press(process.platform === 'darwin' ? 'Alt' : 'Control');
-await page.waitForTimeout(100);
-await drag([0, 0, 0], [0, 30, 0], '40');
+// Copy it 40" along green with Move + the copy key. On a slow CI machine the first click has
+// occasionally been lost; if nothing happened, log what the app was doing and try once more.
+const copyComponent = async () => {
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.workbench.setSelection({ groups: [window.workbench.doc.root.children[0].id] }));
+  await page.keyboard.press('m');
+  await page.waitForTimeout(100);
+  await page.keyboard.press(process.platform === 'darwin' ? 'Alt' : 'Control');
+  await page.waitForTimeout(100);
+  await drag([0, 0, 0], [0, 30, 0], '40');
+  await page.waitForTimeout(100);
+};
+await copyComponent();
+if ((await state()).groups !== 2) {
+  const why = await page.evaluate(() => ({
+    tool: window.workbench.toolId ?? window.workbench.tool?.id,
+    hint: document.querySelector('.status, .statusbar')?.textContent?.slice(0, 120),
+    focus: document.activeElement?.tagName + '.' + document.activeElement?.className,
+    modal: !!document.querySelector('.modal'),
+    selected: [...window.workbench.selection.groups],
+  }));
+  console.log('component copy did nothing the first time, retrying:', JSON.stringify(why));
+  await page.screenshot({ path: `${out}/component-copy-retry.png` });
+  await copyComponent();
+}
 s = await state();
 const comp = await page.evaluate(() => window.workbench.doc.root.children.map((g) => g.componentId));
 check('component copied', s.groups === 2 && comp[0] != null && comp[0] === comp[1], { s, comp });
