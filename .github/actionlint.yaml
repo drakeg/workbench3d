@@ -1,0 +1,4 @@
+# actionlint settings (checked in CI). macos-26 is a GitHub-hosted runner newer than actionlint's list.
+self-hosted-runner:
+  labels:
+    - macos-26
