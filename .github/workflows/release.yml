@@ -43,12 +43,10 @@ jobs:
               echo "release=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            if [[ -z "$TAG_SHA" ]]; then
-              echo "::error::Draft $TAG exists without a matching Git tag; investigate before retrying."
-              exit 1
-            fi
-            if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
-              echo "::error::Draft $TAG points to $TAG_SHA, not $GITHUB_SHA. Refusing to mix commits."
+            # A draft has no Git tag until it is published, so compare the commit it targets.
+            DRAFT_SHA=${TAG_SHA:-$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json targetCommitish --jq '.targetCommitish')}
+            if [[ "$DRAFT_SHA" != "$GITHUB_SHA" ]]; then
+              echo "::error::Draft $TAG targets $DRAFT_SHA, not $GITHUB_SHA. Delete the draft or bump the version before retrying."
               exit 1
             fi
             echo "Resuming unpublished draft $TAG at $GITHUB_SHA"
@@ -160,10 +158,8 @@ jobs:
           # Do not publish a draft with incomplete installers, even if jobs reported success.
           ASSETS=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
           echo "$ASSETS"
-          echo "$ASSETS" | grep -Eq '\.exe
- || { echo "::error::Missing Windows installer"; exit 1; }
-          echo "$ASSETS" | grep -Eq '\.(AppImage|deb|rpm)
- || { echo "::error::Missing Linux installer"; exit 1; }
+          echo "$ASSETS" | grep -Eq '\.exe$' || { echo "::error::Missing Windows installer"; exit 1; }
+          echo "$ASSETS" | grep -Eq '\.(AppImage|deb|rpm)$' || { echo "::error::Missing Linux installer"; exit 1; }
           echo "$ASSETS" | grep -Fxq "Workbench3D_${VERSION}_mac.dmg" || { echo "::error::Missing native macOS DMG"; exit 1; }
           gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false --latest --tag "v$VERSION" --target "$GITHUB_SHA"
           gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '.url, (.assets[].name)'
