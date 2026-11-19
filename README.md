@@ -73,6 +73,10 @@ cd mac && ./build.sh --open   # build and open the native Mac app (needs Xcode 2
 Add-ons are plain JavaScript modules that add tools and commands. They get a stable API (`api.createBox`, `api.createExtrusion`, `api.ui.form`, `api.registerTool`, …).
 See **[docs/ADDONS.md](docs/ADDONS.md)** and the example [`examples/addons/cabinet-box.js`](examples/addons/cabinet-box.js). Load one with **Add-ons → Add-on Manager → Load add-on file…**
 
+## Project planning
+
+Current work is tracked in the [planned sprints](docs/SPRINTS.md) and [prioritized backlog](docs/BACKLOG.md). See the [Agile workflow](docs/AGILE.md) and [agent instructions](AGENTS.md) for implementation and review conventions.
+
 ## Contributing
 
 Bug reports, ideas and pull requests are all welcome. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)**, look at the **[ROADMAP](ROADMAP.md)** for what's next, and read **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for a tour of the code.
