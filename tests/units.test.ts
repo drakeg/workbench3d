@@ -16,6 +16,10 @@ describe('parseLength', () => {
     ['25.4mm', 1],
     ['2.54cm', 1],
     ['-3', -3],
+    ['-1-1/2', -1.5],
+    ["-2' 6\"", -30],
+    ["-2'6-1/2\"", -30.5],
+    ['.5mm', 0.5 / 25.4],
   ])('%s -> %f', (text, expected) => {
     expect(parseLength(text)).toBeCloseTo(expected, 6);
   });
@@ -27,6 +31,9 @@ describe('parseLength', () => {
   it('rejects junk', () => {
     expect(parseLength('abc')).toBeNull();
     expect(parseLength('')).toBeNull();
+    for (const invalid of ['1..2mm', '2.3.4cm', '1..5ft', '3/0', '1 1/0', '-1-1/0', "2' 12\"", "2' -3\""]) {
+      expect(parseLength(invalid), invalid).toBeNull();
+    }
   });
 });
 
