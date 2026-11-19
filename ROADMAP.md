@@ -1,6 +1,6 @@
 # Roadmap
 
-Rough priorities, open to discussion in issues. ✅ = done in v0.1.
+Long-term capabilities and rough priorities, open to discussion in issues. The actionable [backlog](docs/BACKLOG.md), [planned sprints](docs/SPRINTS.md), and [Agile process](docs/AGILE.md) govern execution. ✅ marks existing functionality; some entries were completed after v0.1.
 
 ## Core modeling
 - ✅ Line, rectangle, circle, push/pull, move, rotate, tape measure, eraser, paint
