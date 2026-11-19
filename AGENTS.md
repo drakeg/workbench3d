@@ -1,6 +1,6 @@
 # Workbench3D — agent instructions
 
-Read CONTRIBUTING.md, ROADMAP.md, docs/ARCHITECTURE.md, docs/AGILE.md, docs/BACKLOG.md, and docs/SPRINTS.md before making changes.
+Read RELEASES.md, CONTRIBUTING.md, ROADMAP.md, docs/ARCHITECTURE.md, docs/AGILE.md, docs/BACKLOG.md, and docs/SPRINTS.md before making changes.
 
 ## Goals
 Maintain a reliable, open-source 3D modeler for woodworking, fabrication, home and RV planning. Prefer working software and small, independently testable PRs over large unreviewable changes.
@@ -25,4 +25,4 @@ Maintain a reliable, open-source 3D modeler for woodworking, fabrication, home a
 ## Safety
 Never commit credentials, user projects, generated installers, or proprietary assets. Do not force-push main, merge feature PRs without review approval, or trigger releases without authorization. Prefer supported secure dependencies; validate lockfiles and CI.
 
-The Definition of Done and sprint workflow are in docs/AGILE.md.
+The Definition of Done and sprint workflow are in docs/AGILE.md. Release readiness, SemVer, and partial-release recovery are governed by RELEASES.md; never bump versions or trigger releases without maintainer approval.
