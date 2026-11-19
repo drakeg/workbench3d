@@ -25,12 +25,16 @@ function parseNumberish(s: string): number | null {
   const mixed = s.match(/^(-?\d+(?:\.\d+)?)[\s-]+(\d+)\/(\d+)$/);
   if (mixed) {
     const whole = parseFloat(mixed[1]);
-    const frac = parseInt(mixed[2], 10) / parseInt(mixed[3], 10);
-    return whole < 0 ? whole - frac : whole + frac;
+    const denominator = parseInt(mixed[3], 10);
+    if (denominator === 0) return null;
+    const frac = parseInt(mixed[2], 10) / denominator;
+    return mixed[1].startsWith('-') ? whole - frac : whole + frac;
   }
   const frac = s.match(/^(-?)(\d+)\/(\d+)$/);
   if (frac) {
-    const v = parseInt(frac[2], 10) / parseInt(frac[3], 10);
+    const denominator = parseInt(frac[3], 10);
+    if (denominator === 0) return null;
+    const v = parseInt(frac[2], 10) / denominator;
     return frac[1] ? -v : v;
   }
   if (/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return parseFloat(s);
@@ -45,7 +49,7 @@ export function parseLength(text: string, units: UnitSettings = defaultUnits): n
   let s = text.trim().toLowerCase().replace(/′/g, "'").replace(/″/g, '"').replace(/''/g, '"');
   if (!s) return null;
 
-  const metric = s.match(/^(-?[\d.]+)\s*(mm|cm|m)$/);
+  const metric = s.match(/^(-?(?:\d+\.?\d*|\.\d+))\s*(mm|cm|m)$/);
   if (metric) {
     const v = parseFloat(metric[1]);
     if (isNaN(v)) return null;
@@ -54,7 +58,7 @@ export function parseLength(text: string, units: UnitSettings = defaultUnits): n
   }
 
   // feet and optional inches: 2'  2' 6"  2'6-1/2"
-  const feet = s.match(/^(-?[\d.]+)\s*(?:'|ft)\s*(.*)$/);
+  const feet = s.match(/^(-?(?:\d+\.?\d*|\.\d+))\s*(?:'|ft)\s*(.*)$/);
   if (feet) {
     const f = parseFloat(feet[1]);
     if (isNaN(f)) return null;
@@ -62,7 +66,7 @@ export function parseLength(text: string, units: UnitSettings = defaultUnits): n
     let inches = 0;
     if (rest) {
       const v = parseNumberish(rest);
-      if (v === null) return null;
+      if (v === null || v < 0 || v >= 12) return null;
       inches = v;
     }
     const sign = f < 0 || feet[1].startsWith('-') ? -1 : 1;
