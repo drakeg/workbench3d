@@ -79,9 +79,13 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       shortcut: 'Mod+O',
       run: async () => {
         if (!(await confirmDiscard())) return;
-        const r = await openFile(MODEL_FILTER);
-        if (!r) return;
-        openText(r.text, r.target);
+        try {
+          const r = await openFile(MODEL_FILTER);
+          if (!r) return;
+          openText(r.text, r.target);
+        } catch (e) {
+          app.toast(`Couldn't open model: ${(e as Error).message ?? e}. Your current model was not replaced.`, 'error');
+        }
       },
     },
     {

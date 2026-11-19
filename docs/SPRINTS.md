@@ -4,7 +4,7 @@
 
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
 |---|---|---|---|---|
-| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008 | In progress (first item branched; remaining proposed) |
+| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008 | In progress (WB-001 merged; WB-008 in review) |
 | 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
 | 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
@@ -13,8 +13,8 @@
 
 ## Sprint 01 — Reliability
 **Objective:** prevent avoidable invalid dimensions and protect existing model files.
-- WB-001 (2 pts): strict measurement parsing. **Accept:** malformed metric/imperial strings and fractions with zero denominators return null; negative mixed dimensions resolve correctly; focused automated tests. **Current:** In Review pending PR/CI.
-- WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** Proposed.
+- WB-001 (2 pts): strict measurement parsing. **Accept:** malformed metric/imperial strings and fractions with zero denominators return null; negative mixed dimensions resolve correctly; focused automated tests. **Current:** Done — [PR #29](https://github.com/drakeg/workbench3d/pull/29) merged; CI passed.
+- WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** In Review (file safety implementation and tests pending CI/merge).
 **Exit:** tests/CI verified; regression cases documented; completed PR URLs recorded below.
 
 ## Sprint 02 — Import/export
@@ -44,7 +44,7 @@
 ## Sprint reporting (update at every close)
 | Sprint | Delivered PRs | Tests/CI | Carryovers / blockers | Retro / next action |
 |---|---|---|---|---|
-| 01 | Pending | Pending | WB-008 not started | Review at close |
+| 01 | [PR #29](https://github.com/drakeg/workbench3d/pull/29) merged; WB-008 PR pending | WB-001 CI passed; WB-008 pending | WB-008 awaiting validation and merge | Review at close |
 | 02–06 | None yet | Not run | Proposed | Confirm capacity before starting |
 
 Use actual merged PR links and CI results here rather than guessed outcomes. Move unfinished work forward intentionally; urgent P0/P1 work may displace planned features.
