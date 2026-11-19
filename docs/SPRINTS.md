@@ -1,0 +1,50 @@
+# Planned Workbench3D sprints
+
+**Planning baseline:** November 18, 2026. These are *proposed* two-week iterations, not approved delivery promises; actual dates/capacity are confirmed at sprint planning. Track individual work in [BACKLOG.md](BACKLOG.md) and GitHub Issues/PRs. Never mark a sprint complete before verifying merged work.
+
+| Sprint | Proposed window | Goal | Planned backlog IDs | Status |
+|---|---|---|---|---|
+| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008 | In progress (first item branched; remaining proposed) |
+| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
+| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
+| 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
+| 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
+| 06 — Workflow and interoperability | Jan 28–Feb 10, 2027 | Expand CNC export and efficient editing | WB-011, WB-009 | Proposed |
+
+## Sprint 01 — Reliability
+**Objective:** prevent avoidable invalid dimensions and protect existing model files.
+- WB-001 (2 pts): strict measurement parsing. **Accept:** malformed metric/imperial strings and fractions with zero denominators return null; negative mixed dimensions resolve correctly; focused automated tests. **Current:** In Review pending PR/CI.
+- WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** Proposed.
+**Exit:** tests/CI verified; regression cases documented; completed PR URLs recorded below.
+
+## Sprint 02 — Import/export
+- WB-002 (3 pts): STL import with unit strategy, unsupported-file feedback and representative fixtures.
+- WB-003 (3 pts): glTF/GLB export preserves group hierarchy/transforms/colors; exported sample opens in a standards-compliant viewer.
+**Exit:** independently verifiable import/export test assets and documented limitations.
+
+## Sprint 03 — Shop output
+- WB-004 (5 pts): printable orthographic shop drawings with dimensions and predictable scaling.
+- WB-005 (3 pts): material price input, quantity and cost estimation with explicit units, regression tests.
+**Exit:** sample cabinet can yield clear drawings and a reproducible material estimate. Split WB-004 if needed.
+
+## Sprint 04 — RV planning
+- WB-006 (5 pts): configurable interior footprint and appliance blocks via reusable, editable shapes.
+**Exit:** sample RV layout loads/saves/reopens, dimensions remain editable, and the workflow is documented.
+
+## Sprint 05 — Geometry tools
+- WB-007 (5 pts): minimal Follow Me sweep over a defined path, with geometry and undo tests.
+- WB-010 (3 pts): 3-point arc tool with typed dimensions and keyboard handling.
+**Exit:** demonstrated use cases produce stable geometry, correct saving and undo.
+
+## Sprint 06 — Workflow and interoperability
+- WB-011 (5 pts): export scalable DXF/SVG profiles with verified units.
+- WB-009 (3 pts): customize shortcuts, prevent collisions, persist correctly across platforms.
+**Exit:** interoperability fixtures validate sizes and shortcut settings survive restart.
+
+## Sprint reporting (update at every close)
+| Sprint | Delivered PRs | Tests/CI | Carryovers / blockers | Retro / next action |
+|---|---|---|---|---|
+| 01 | Pending | Pending | WB-008 not started | Review at close |
+| 02–06 | None yet | Not run | Proposed | Confirm capacity before starting |
+
+Use actual merged PR links and CI results here rather than guessed outcomes. Move unfinished work forward intentionally; urgent P0/P1 work may displace planned features.
