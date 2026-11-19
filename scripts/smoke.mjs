@@ -214,6 +214,8 @@ p = await proj(40, 0, 0);
 await page.mouse.move(p[0], p[1]);
 await page.keyboard.type('30');
 await page.keyboard.press('Enter');
+const firstCopy = await state();
+check('move-copy creates first duplicate', firstCopy.groups === 2, firstCopy);
 await page.keyboard.type('x3');
 await page.keyboard.press('Enter');
 s = await state();

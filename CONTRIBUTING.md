@@ -9,6 +9,10 @@ Thanks for helping! Woodworkers, welders, RVers, home builders and programmers a
 - **Write an add-on.** Lumber libraries, hardware (hinges, slides, fasteners), RV appliances, steel shapes, joinery helpers… see [docs/ADDONS.md](docs/ADDONS.md).
 - **Improve the core.** Pick something from the [ROADMAP](ROADMAP.md) or an issue labelled `good first issue`.
 
+## Sprint workflow and tracking
+
+Before starting a task, consult [the planned sprints](docs/SPRINTS.md), [the backlog](docs/BACKLOG.md), and [the Agile process](docs/AGILE.md). Contributors using coding agents must also follow [AGENTS.md](AGENTS.md). Link the work item in the PR, and keep its status current through review and merge. A PR is not Done until reviewed, verified and merged.
+
 ## Development setup
 
 ```bash
