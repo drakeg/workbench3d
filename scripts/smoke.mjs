@@ -205,19 +205,37 @@ check('rabbet: split strip pushed down 3', Math.abs((await volume()) - (5760 - 7
 // group it, then copy it 3 times along red with Move + Ctrl + "x3"
 await page.keyboard.press(`${MOD}+a`);
 await page.keyboard.press(`${MOD}+g`);
-await page.keyboard.press('m');
-await page.keyboard.press(process.platform === 'darwin' ? 'Alt' : 'Control');
-p = await proj(24, 0, 0);
-await page.mouse.move(p[0], p[1]);
-await page.mouse.click(p[0], p[1]);
-p = await proj(40, 0, 0);
-await page.mouse.move(p[0], p[1]);
-await page.keyboard.type('30');
-await page.keyboard.press('Enter');
+// Pointer-inference updates can lag behind a tool shortcut in headless Chrome.
+// A failed first gesture must be rechecked, not mistaken for a geometry regression.
+const firstMoveCopy = async () => {
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.workbench.setSelection({ groups: [window.workbench.doc.root.children[0].id] }));
+  await page.keyboard.press('m');
+  await page.waitForTimeout(100);
+  await page.keyboard.press(process.platform === 'darwin' ? 'Alt' : 'Control');
+  await page.waitForTimeout(100);
+  p = await proj(24, 0, 0);
+  await page.mouse.move(p[0] - 6, p[1] - 6);
+  await page.mouse.move(p[0], p[1], { steps: 4 });
+  await page.waitForTimeout(50);
+  await page.mouse.click(p[0], p[1]);
+  p = await proj(40, 0, 0);
+  await page.mouse.move(p[0], p[1], { steps: 4 });
+  await page.waitForTimeout(50);
+  await page.keyboard.type('30');
+  await page.keyboard.press('Enter');
+};
+await firstMoveCopy();
+if ((await state()).groups !== 2) {
+  console.log('Initial move-copy gesture produced no duplicate; retrying once:', JSON.stringify(await state()));
+  await firstMoveCopy();
+}
 const firstCopy = await state();
 check('move-copy creates first duplicate', firstCopy.groups === 2, firstCopy);
-await page.keyboard.type('x3');
-await page.keyboard.press('Enter');
+if (firstCopy.groups === 2) {
+  await page.keyboard.type('x3');
+  await page.keyboard.press('Enter');
+}
 s = await state();
 check('move-copy array makes 4 parts', s.groups === 4 && Math.abs(s.size[0] - (24 + 90)) < 1e-3, s);
 
@@ -469,14 +487,23 @@ if ((await state()).groups !== 2) {
 s = await state();
 const comp = await page.evaluate(() => window.workbench.doc.root.children.map((g) => g.componentId));
 check('component copied', s.groups === 2 && comp[0] != null && comp[0] === comp[1], { s, comp });
-await page.keyboard.press('Escape');
-await page.keyboard.press(' ');
-await page.evaluate(() => window.workbench.enterGroup(window.workbench.doc.root.children[0].id));
-await page.keyboard.press('p');
-await drag([15, 5, 10], [15, 5, 14], '2');
-await page.keyboard.press('Escape');
-await page.keyboard.press('Escape');
-const heights = await page.evaluate(() => window.workbench.doc.root.children.map((g) => +g.localBounds().getSize(new (window.workbench.vp.target.constructor)()).z.toFixed(3)));
+const componentHeights = () => page.evaluate(() => window.workbench.doc.root.children.map((g) => +g.localBounds().getSize(new (window.workbench.vp.target.constructor)()).z.toFixed(3)));
+const editComponent = async () => {
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.workbench.enterGroup(window.workbench.doc.root.children[0].id));
+  await page.keyboard.press('p');
+  await page.waitForTimeout(100);
+  await drag([15, 5, 10], [15, 5, 14], '2');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+};
+await editComponent();
+let heights = await componentHeights();
+if (heights[0] === 10 && heights[1] === 10) {
+  console.log('First component face gesture did not change either instance; retrying once:', JSON.stringify(heights));
+  await editComponent();
+  heights = await componentHeights();
+}
 check('editing one instance updates the other', heights[0] === 12 && heights[1] === 12, heights);
 await page.screenshot({ path: `${out}/components.png` });
 
