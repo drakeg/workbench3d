@@ -285,17 +285,46 @@ export class WorkbenchDocument {
   }
 
   restore(text: string): void {
-    const j = JSON.parse(text) as DocumentJSON;
-    if (j.format !== 'workbench3d') throw new Error('Not a Workbench3D file');
-    this.root = Group.fromJSON(j.root);
-    this.units = { ...defaultUnits, ...j.units };
+    // Validate and construct the replacement model *before* touching the open document.
+    // An invalid file must never leave a partially replaced model on screen.
+    let j: DocumentJSON;
+    try {
+      j = JSON.parse(text) as DocumentJSON;
+    } catch {
+      throw new Error('Invalid project JSON. Check that this is a complete .wb3d file.');
+    }
+    if (!j || typeof j !== 'object' || j.format !== 'workbench3d') throw new Error('Not a Workbench3D file');
+    if (j.version !== 1) throw new Error(`Unsupported Workbench3D file version: ${String(j.version)}`);
+    if (!j.root || typeof j.root !== 'object' || !Array.isArray(j.root.children) ||
+        !Array.isArray(j.root.matrix) || j.root.matrix.length !== 16 ||
+        !j.root.mesh || !Array.isArray(j.root.mesh.verts) ||
+        !Array.isArray(j.root.mesh.faces) || !Array.isArray(j.root.mesh.lines)) {
+      throw new Error('Invalid Workbench3D project: missing or damaged model data');
+    }
+    const nextRoot = Group.fromJSON(j.root);
+    if (![...nextRoot.walk()].every((g) => g.matrix.elements.every(Number.isFinite))) {
+      throw new Error('Invalid Workbench3D project: non-finite group transform');
+    }
+    const nextUnits = { ...defaultUnits, ...j.units };
+    const nextGuides = j.guides ? structuredClone(j.guides) : [];
+    const nextDimensions = j.dimensions ? structuredClone(j.dimensions) : [];
+    const nextTags = j.tags ? structuredClone(j.tags) : [];
+    const nextScenes = j.scenes ? structuredClone(j.scenes) : [];
+    const nextSections = j.sections ? structuredClone(j.sections) : [];
+    const nextComponents = j.components ? structuredClone(j.components) : [];
+    if (!Number.isSafeInteger(j.nextGroupId) || j.nextGroupId < 1 ||
+        ![nextGuides, nextDimensions, nextTags, nextScenes, nextSections, nextComponents].every(Array.isArray)) {
+      throw new Error('Invalid Workbench3D project: malformed document metadata');
+    }
+    this.root = nextRoot;
+    this.units = nextUnits;
     this.nextGroupId = j.nextGroupId;
-    this.guides = j.guides ? structuredClone(j.guides) : [];
-    this.dimensions = j.dimensions ? structuredClone(j.dimensions) : [];
-    this.tags = j.tags ? structuredClone(j.tags) : [];
-    this.scenes = j.scenes ? structuredClone(j.scenes) : [];
-    this.sections = j.sections ? structuredClone(j.sections) : [];
-    this.components = j.components ? structuredClone(j.components) : [];
+    this.guides = nextGuides;
+    this.dimensions = nextDimensions;
+    this.tags = nextTags;
+    this.scenes = nextScenes;
+    this.sections = nextSections;
+    this.components = nextComponents;
     this.nextItemId = j.nextItemId ?? 1;
   }
 
