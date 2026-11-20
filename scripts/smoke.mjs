@@ -600,5 +600,31 @@ check('imports a SketchUp file as one group with its components and tags',
 await page.waitForTimeout(150);
 await page.screenshot({ path: `${out}/skp-import.png` });
 
+// STL import: exercise the real file import dialog and 25.4 mm -> 1 inch conversion.
+await reset();
+const stlBytes = Buffer.alloc(134);
+stlBytes.write('Workbench3D STL fixture', 0, 'ascii');
+stlBytes.writeUInt32LE(1, 80);
+const stlPoints = [[0, 0, 0], [25.4, 0, 0], [0, 25.4, 0]];
+stlPoints.forEach((v, i) => v.forEach((n, axis) => stlBytes.writeFloatLE(n, 96 + i * 12 + axis * 4)));
+await page.evaluate((b64) => {
+  const data = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  void window.workbench.importFile('fixture.stl', data.buffer);
+}, stlBytes.toString('base64'));
+await page.waitForSelector('.modal form');
+await page.click('.modal-footer button.primary');
+await page.waitForFunction(() => window.workbench.doc.root.children.length === 1);
+const stlState = await page.evaluate(() => {
+  const a = window.workbench;
+  const g = a.doc.root.children[0];
+  const b = g.localBounds().getSize(new a.vp.target.constructor());
+  return { name: g.name, faces: g.mesh.faces.size, size: b.toArray(), selected: [...a.selection.groups].includes(g.id) };
+});
+check('STL imports through dialog with correct units and selection',
+  stlState.name === 'fixture' && stlState.faces === 1 &&
+  Math.abs(stlState.size[0] - 1) < 1e-4 && Math.abs(stlState.size[1] - 1) < 1e-4 &&
+  stlState.selected, stlState);
+await page.screenshot({ path: `${out}/stl-import.png` });
+
 check('no page errors', errors.length === 0, errors);
 await browser.close();
