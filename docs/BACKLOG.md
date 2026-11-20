@@ -5,7 +5,7 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | ID | Priority | Points | Status | User outcome / acceptance | Dependency |
 |---|---|---:|---|---|---|
 | WB-001 | P1 | 2 | Done (PR #29) | Reject malformed measurements and zero denominators; signed feet/inches parse correctly and have regression tests | None |
-| WB-002 | P2 | 3 | Proposed | Import STL mesh into a new model/group with predictable units, useful errors and fixtures | Import architecture investigation |
+| WB-002 | P2 | 3 | Done (PR #35) | Import STL mesh into a new model/group with predictable units, useful errors and fixtures | Import architecture investigation |
 | WB-003 | P2 | 3 | Proposed | Export glTF/GLB with preserved group transforms and colors and loadable fixture | Mesh export coverage |
 | WB-004 | P2 | 5 | Proposed | Offer printable orthographic shop drawing with dimensions and correct page scale | Dimension and PDF modules |
 | WB-005 | P2 | 3 | Proposed | Cut-list estimate accepts stock prices and displays calculated cost totals | Cut-list layout |
@@ -15,7 +15,7 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-009 | P3 | 3 | Proposed | Adjustable shortcuts persisted by platform, with collision detection | Settings UI |
 | WB-010 | P3 | 3 | Proposed | 3-point arc tool with exact measurements and undo | Draw tool framework |
 | WB-011 | P2 | 5 | Proposed | DXF/SVG vector export suitable for CNC/laser, with unit and scale checks | Geometry export |
-| WB-013 | P2 | 2 | In Review | Verify README technology/workflow/release/community badges, link sources, document conventions, and check them in CI | Root README; CI |
+| WB-013 | P2 | 2 | Done (PR #34) | Verify README technology/workflow/release/community badges, link sources, document conventions, and check them in CI | Root README; CI |
 | WB-016 | P1 | 3 | In Review | Built-in six-panel 24-inch cabinet sample supports a repeatable cut-list demo; verify geometry, save/reopen and undo | Cut List add-on |
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
