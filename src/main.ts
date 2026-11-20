@@ -15,6 +15,7 @@ import { dialog } from './ui/dialogs';
 import lumber from '../addons/lumber';
 import steel from '../addons/steel';
 import cutlist from '../addons/cutlist';
+import cabinetDemo from '../addons/cabinetDemo';
 
 /** Platform and theme classes on <html>: the CSS follows each OS's conventions. */
 function applyPlatform(): () => boolean {
@@ -84,7 +85,7 @@ async function boot() {
   registerCommands(app, addOns);
 
   const ui = new UI(app, root, stage);
-  for (const a of [lumber, steel, cutlist]) await addOns.activate(a, true);
+  for (const a of [lumber, steel, cutlist, cabinetDemo]) await addOns.activate(a, true);
   await addOns.restore();
 
   // the viewport follows light/dark too
