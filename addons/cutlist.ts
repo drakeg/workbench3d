@@ -2,7 +2,7 @@ import type { AddOn, WorkbenchAPI } from '../src/plugins/api';
 import type { Group } from '../src/core/document';
 import { LayoutResult, boardWidthFor, layoutParts } from '../src/core/cutlayout';
 import { PdfDoc, RGB, textWidth } from '../src/core/pdf';
-import { CostEstimate, estimateStockCost, money, parseStockPrice } from '../src/core/materialCost';
+import { CostEstimate, estimateStockCost, money, parseStockPrice, stockQuoteKey } from '../src/core/materialCost';
 
 interface Row {
   name: string;
@@ -112,7 +112,7 @@ function stockGroups(rows: Row[], settings: Settings, fmt: (n: number) => string
 function costEstimate(groups: StockGroup[], layouts: LayoutResult[], settings: Settings): CostEstimate {
   return estimateStockCost(groups.map((g, i) => ({
     key: g.key, label: g.label, count: layouts[i].pieces.length,
-    unitPrice: Number.isFinite(settings.prices[g.key]) && settings.prices[g.key] >= 0 ? settings.prices[g.key] : null,
+    unitPrice: Number.isFinite(settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)]) && settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)] >= 0 ? settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)] : null,
     unplaced: layouts[i].tooBig.length,
   })));
 }
@@ -349,7 +349,7 @@ const cutlist: AddOn = {
           </div>
           <div class="cut-groups"></div>
           <div class="cut-estimate" aria-live="polite"></div>
-          <p class="muted">Prices are entered in USD per whole sheet or board, saved in this browser, and exclude tax, shipping, labor and hardware. A blank price is unknown, not free.</p>
+          <p class="muted">Prices are entered in USD per specific sheet or board size, saved in this browser, and exclude tax, shipping, labor and hardware. A blank price is unknown, not free.</p>
         </section>`;
 
       const groupsEl = root.querySelector<HTMLElement>('.cut-groups')!;
@@ -375,7 +375,7 @@ const cutlist: AddOn = {
                 </select>
                 <label>${g.kind === 'sheet' ? 'Sheet' : 'Board'} <input name="width" type="text" size="6" value="${esc(f(g.width))}" aria-label="Stock width"></label>
                 × <input name="length" type="text" size="6" value="${esc(f(g.length))}" aria-label="Stock length">
-                <label>USD per ${g.kind === 'sheet' ? 'sheet' : 'board'} <input name="price" inputmode="decimal" type="text" size="8" aria-label="Price per stock unit for ${esc(g.label)}" value="${settings.prices[g.key] === undefined ? '' : settings.prices[g.key].toFixed(2)}"></label>
+                <label>USD per ${g.kind === 'sheet' ? 'sheet' : 'board'} <input name="price" inputmode="decimal" type="text" size="8" aria-label="Price per stock unit for ${esc(g.label)}" value="${settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)] === undefined ? '' : settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)].toFixed(2)}"></label>
                 <span class="muted">${n} ${g.kind === 'sheet' ? (n === 1 ? 'sheet' : 'sheets') : n === 1 ? 'board' : 'boards'}, ${avg}% used</span>
               </div>
               ${lay.tooBig.map((b) => `<p class="error">${esc(b.name)} (${f(b.length)} × ${f(b.width)}) doesn't fit on this stock.</p>`).join('')}
@@ -416,9 +416,9 @@ const cutlist: AddOn = {
             const entered = t.value.trim();
             const price = parseStockPrice(entered);
             if (price === null) {
-              delete settings.prices[g.key];
+              delete settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)];
               if (entered) api.ui.toast('Invalid stock price. Enter USD with up to two decimal places, or leave blank for unknown.', 'error');
-            } else settings.prices[g.key] = price;
+            } else settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)] = price;
             save(settings);
             updateEstimate(); // Don't replace a focused input during blur/change.
             return;
