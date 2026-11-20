@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013, WB-014, WB-015 | Completed — PR #37 merged; Docker CI passed |
 | 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Early implementation — [PR #35](https://github.com/drakeg/workbench3d/pull/35) merged; [PR #36](https://github.com/drakeg/workbench3d/pull/36) in review |
-| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Early implementation — [PR #38](https://github.com/drakeg/workbench3d/pull/38) in review |
+| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Early implementation — WB-016 merged; WB-004/WB-005 in review |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
 | 06 — Workflow and interoperability | Jan 28–Feb 10, 2027 | Expand CNC export and efficient editing | WB-011, WB-009 | Proposed |
@@ -27,7 +27,7 @@
 
 ## Sprint 03 — Shop output
 - WB-016 (3 pts): generate a six-panel sample cabinet for the cut-list/shop workflow. **Current:** In Review — [PR #38](https://github.com/drakeg/workbench3d/pull/38); browser smoke verifies six parts, cut-list rows, and sheet layout. Customer validation remains pending.
-- WB-004 (5 pts): printable orthographic shop drawings with dimensions and predictable scaling.
+- WB-004 (5 pts): printable orthographic shop drawings with dimensions and predictable scaling. **Current:** In Review (first increment): top/front/right wireframe PDF, fixed 1:N scale and overall dimensions; hidden-line removal and detailed part dimensions remain future enhancements.
 - WB-005 (3 pts): material price input, quantity and cost estimation with explicit units, regression tests.
 **Exit:** sample cabinet can yield clear drawings and a reproducible material estimate. Split WB-004 if needed.
 
