@@ -21,6 +21,7 @@ extension FocusedValues {
 /// One model window: the Outliner, the 3D view with its tool palette, and Entity Info.
 struct ContentView: View {
     let document: ModelDocument
+    var fileURL: URL?
     @Environment(\.undoManager) private var undoManager
     @State private var showInspector = true
     @State private var columns = NavigationSplitViewVisibility.all
@@ -39,7 +40,14 @@ struct ContentView: View {
         }
         .toolbar { WindowToolbar(editor: editor, showInspector: $showInspector) }
         .focusedSceneValue(\.editor, editor)
-        .onAppear { editor.undoManager = undoManager }
+        .sheet(isPresented: Binding(get: { editor.showCutList }, set: { editor.showCutList = $0 })) {
+            CutListView(editor: editor)
+        }
+        .onAppear {
+            editor.undoManager = undoManager
+            editor.fileURL = fileURL
+        }
+        .onChange(of: fileURL) { _, url in editor.fileURL = url }
         .onChange(of: undoManager) { _, um in editor.undoManager = um }
         .noInitialFocus()
         .frame(minWidth: 820, minHeight: 520)
