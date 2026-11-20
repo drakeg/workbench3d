@@ -15,7 +15,7 @@ describe('dimensioned orthographic shop views', () => {
     const pdf = new TextDecoder('latin1').decode(exportShopDrawing(doc.root, 'Cabinet demo'));
     expect(pdf).toMatch(/^%PDF-1\.4/);
     expect(pdf).toContain('/Count 1');
-    expect(pdf).toContain('(Scale 1:12 \(print at 100%, no fit-to-page\) | Dimensions in inches)');
+    expect(pdf).toContain(String.raw`(Scale 1:12 \(print at 100%, no fit-to-page\) | Dimensions in inches)`);
     expect(pdf).toContain('(24.000 in)');
     expect(pdf).toContain('(30.000 in)');
     expect(pdf).toContain('(Cabinet demo)');
