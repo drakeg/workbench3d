@@ -27,7 +27,7 @@ verify((block.match(/<p align="center">/g) ?? []).length <= 3, 'Keep badges with
 for (const [name, { href, src }] of badges) {
   verify(/^https:\/\//.test(src), `${name}: image URL must be HTTPS`);
   verify(src.startsWith('https://img.shields.io/') || src.startsWith('https://github.com/drakeg/workbench3d/actions/workflows/'), `${name}: only Shields.io and official workflow status badges are allowed`);
-  verify(href.startsWith('https://') || (href === 'CONTRIBUTING.md' && existsSync(href)), `${name}: invalid target link`);
+  verify(href.startsWith('https://') || (['CONTRIBUTING.md', 'compose.yml'].includes(href) && existsSync(href)), `${name}: invalid target link`);
 }
 const expectedTech = {
   'TypeScript': existsSync('tsconfig.json') && !!manifest.devDependencies?.typescript,
@@ -37,6 +37,7 @@ const expectedTech = {
   'Three.js': !!manifest.dependencies?.three,
   'Vite': !!manifest.devDependencies?.vite,
   'Tauri': !!manifest.dependencies?.['@tauri-apps/api'] && existsSync('src-tauri/Cargo.toml'),
+  'Docker Compose': existsSync('Dockerfile') && existsSync('compose.yml'),
 };
 for (const [name, supported] of Object.entries(expectedTech)) verify(badges.has(name) === supported, `${name}: badge must reflect repository configuration`);
 const workflows = { CI: 'ci.yml', 'Mac app': 'mac.yml', 'Deploy web app': 'pages.yml', 'Release desktop app': 'release.yml' };
@@ -57,7 +58,7 @@ const required = {
 for (const [name, prefix] of Object.entries(required)) verify(badges.get(name)?.src.startsWith(prefix), `${name}: expected a dynamic GitHub Shields.io badge`);
 verify(existsSync('LICENSE') === badges.has('License'), 'A license badge requires an actual LICENSE file.');
 verify(existsSync('CONTRIBUTING.md') === badges.has('Contributing'), 'A contribution badge requires CONTRIBUTING.md.');
-verify(!/Docker|PostgreSQL|MySQL|AWS|Vercel/.test([...badges.keys()].join(' ')), 'Do not claim infrastructure unsupported by this repository.');
+verify(!/PostgreSQL|MySQL|AWS|Vercel/.test([...badges.keys()].join(' ')), 'Do not claim infrastructure unsupported by this repository.');
 verify(!/badge\/(?:build|tests|security)-(?:passing|green)/i.test(block), 'Do not hardcode successful test or security results.');
 if (errors.length) {
   for (const error of errors) console.error(`Badge validation failed: ${error}`);

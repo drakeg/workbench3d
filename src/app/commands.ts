@@ -1,4 +1,5 @@
 import { exportOBJ, exportSTL } from '../core/export';
+import { exportGLB, exportGLTF } from '../core/exportGltf';
 import { App, isMac } from './app';
 import { isDesktopApp, isWindows } from './os';
 import { copySelection, hasClip, paste } from './clipboard';
@@ -152,6 +153,22 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       label: 'Export OBJ…',
       menu: 'File',
       run: () => saveFile(`${baseName()}.obj`, exportOBJ(app.doc.root, app.doc.units.system === 'metric' ? 'mm' : 'in'), [{ name: 'OBJ', extensions: ['obj'] }]).then(() => {}),
+    },
+    {
+      id: 'file.exportGLB',
+      label: 'Export glTF Binary (.glb)…',
+      menu: 'File',
+      run: async () => {
+        await saveFile(`${baseName()}.glb`, exportGLB(app.doc.root), [{ name: 'glTF binary', extensions: ['glb'] }]);
+      },
+    },
+    {
+      id: 'file.exportGLTF',
+      label: 'Export glTF JSON (.gltf)…',
+      menu: 'File',
+      run: async () => {
+        await saveFile(`${baseName()}.gltf`, exportGLTF(app.doc.root), [{ name: 'glTF JSON', extensions: ['gltf'] }]);
+      },
     },
     {
       id: 'file.exportPNG',
