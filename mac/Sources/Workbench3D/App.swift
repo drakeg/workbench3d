@@ -16,7 +16,7 @@ struct Workbench3DApp: App {
 
     var body: some Scene {
         DocumentGroup(newDocument: { ModelDocument() }) { file in
-            ContentView(document: file.document)
+            ContentView(document: file.document, fileURL: file.fileURL)
                 .themed()
                 .overlay { if GridOverlay.enabled { GridOverlay() } }
         }
@@ -150,6 +150,11 @@ struct ModelCommands: Commands {
         // Tools have single-key shortcuts typed in the 3D view (shown in brackets); a menu key
         // equivalent with no modifier would swallow typing in the Measurements box.
         CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon]) }
+        CommandMenu("Shop") {
+            Button("Cut List…") { editor?.showCutList = true }
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(editor == nil)
+        }
         CommandMenu("Tools") { toolButtons([.select, .eraser, .paint, .pushpull, .offset, .move, .rotate, .scale, .tape, .orbit, .pan, .zoom]) }
     }
 
