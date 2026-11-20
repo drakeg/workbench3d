@@ -234,6 +234,7 @@ enum SelfTest {
         de.camera.size = CGSize(width: 1000, height: 700)
         de.camera.look(from: V3(0, -0.01, 200), at: .zero)
         de.setTool(.dimension)
+        dimUndo.beginUndoGrouping()
         func dimensionEvent(_ p: V3) -> ToolEvent {
             let screen = de.camera.project(p).point
             return ToolEvent(pt: screen, ray: de.camera.ray(at: screen))
@@ -243,6 +244,7 @@ enum SelfTest {
             de.tool.mouseMoved(event, de)
             de.tool.mouseDown(event, de)
         }
+        dimUndo.endUndoGrouping()
         let dim = de.doc.dimensions.first
         let span = dim.map { V3($0.b[0] - $0.a[0], $0.b[1] - $0.a[1], $0.b[2] - $0.a[2]).length } ?? 0
         check("Dimension makes a saved 24-inch linear annotation",
