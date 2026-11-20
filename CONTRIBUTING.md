@@ -44,6 +44,10 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
 4. `npm test && npm run typecheck && npm run build` must pass. CI runs them too.
 5. Describe what changed and how you tested it. A screenshot or GIF helps for UI work.
 
+## README badge standards
+
+Maintain the verified badges beneath the README project title whenever dependencies, workflows, supported platforms, licensing or deployments change. Use Shields.io for technology and dynamic GitHub metadata, and official GitHub Actions status badges for actual workflows. Do not invent technology versions, passing checks, releases, Docker support or a license. Keep clickable badges in no more than three compact rows and preserve existing README prose. Run `node scripts/validate-badges.mjs` before submitting a PR; CI enforces the same check. Refer to [AGENTS.md](AGENTS.md) and the [central standards repository](https://github.com/drakeg/madmallard-repository-standards) as shared guidance becomes available.
+
 ## Code style
 
 - TypeScript, strict mode. Prettier defaults (`.prettierrc`): 2 spaces, single quotes, 150 columns.
