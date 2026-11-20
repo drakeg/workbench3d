@@ -2,6 +2,31 @@
 
 <h1 align="center">Workbench3D</h1>
 
+<!-- badges:start -->
+<p align="center">
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white"></a>
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript"><img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black"></a>
+  <a href="https://www.rust-lang.org/"><img alt="Rust" src="https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white"></a>
+  <a href="https://www.swift.org/"><img alt="Swift" src="https://img.shields.io/badge/Swift-F05138?logo=swift&logoColor=white"></a>
+  <a href="https://threejs.org/"><img alt="Three.js" src="https://img.shields.io/badge/Three.js-000000?logo=threedotjs&logoColor=white"></a>
+  <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white"></a>
+  <a href="https://tauri.app/"><img alt="Tauri" src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=white"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/drakeg/workbench3d/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/drakeg/workbench3d/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/drakeg/workbench3d/actions/workflows/mac.yml"><img alt="Mac app" src="https://github.com/drakeg/workbench3d/actions/workflows/mac.yml/badge.svg"></a>
+  <a href="https://github.com/drakeg/workbench3d/actions/workflows/pages.yml"><img alt="Deploy web app" src="https://github.com/drakeg/workbench3d/actions/workflows/pages.yml/badge.svg"></a>
+  <a href="https://github.com/drakeg/workbench3d/actions/workflows/release.yml"><img alt="Release desktop app" src="https://github.com/drakeg/workbench3d/actions/workflows/release.yml/badge.svg"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/drakeg/workbench3d/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/drakeg/workbench3d?logo=github"></a>
+  <a href="https://github.com/drakeg/workbench3d/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/drakeg/workbench3d"></a>
+  <a href="https://github.com/drakeg/workbench3d/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/drakeg/workbench3d"></a>
+  <a href="https://github.com/drakeg/workbench3d/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/drakeg/workbench3d"></a>
+  <a href="CONTRIBUTING.md"><img alt="Contributing" src="https://img.shields.io/badge/Contributions-Welcome-2ea44f?logo=github"></a>
+</p>
+<!-- badges:end -->
+
 <p align="center"><b>An open-source push/pull 3D modeler for woodworking, welding and fabrication, home design and RV interiors.</b><br>
 Runs in your browser or as a desktop app on macOS, Windows and Linux. MIT licensed. Add-ons welcome.</p>
 
