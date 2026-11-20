@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.github
+*.log
+*.dmg
+mac/dmg
+src-tauri/target
+.env
+.env.*
+!/.env.example
