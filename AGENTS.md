@@ -1,6 +1,6 @@
 # Workbench3D — agent instructions
 
-Read RELEASES.md, CONTRIBUTING.md, ROADMAP.md, docs/ARCHITECTURE.md, docs/AGILE.md, docs/BACKLOG.md, and docs/SPRINTS.md before making changes.
+Read SECURITY.md, docs/COMMERCIALIZATION.md, RELEASES.md, CONTRIBUTING.md, ROADMAP.md, docs/ARCHITECTURE.md, docs/AGILE.md, docs/BACKLOG.md, and docs/SPRINTS.md before making changes.
 
 ## Goals
 Maintain a reliable, open-source 3D modeler for woodworking, fabrication, home and RV planning. Prefer working software and small, independently testable PRs over large unreviewable changes.
@@ -12,6 +12,14 @@ Maintain a reliable, open-source 3D modeler for woodworking, fabrication, home a
 4. Run npm ci, npm run typecheck, npm test, and npm run build. For UI changes also run the browser/platform smoke checks in CONTRIBUTING.md. Report unrun checks honestly.
 5. Create reviewable PRs with verification results, risks, and screenshot evidence for UI work. Do not mark tasks Done before merge and review.
 6. Update docs/BACKLOG.md and docs/SPRINTS.md as work progresses. Record blockers and carryovers; do not assume planned work is completed.
+
+## Autonomous delivery and business validation
+
+Use **Build → Deploy → Test → Fix → Redeploy → Continue** for each authorized development session. Prioritize P0/P1 defects, broken CI and customer-facing workflows before polish; advance to the next Ready backlog item when safe. Maintain a browser build, Docker Compose LAN test configuration, and GitHub Pages deployment workflow. Do not claim local deployment without actually starting and accessing it; test the container image in CI. Production changes, costs, destructive operations, and release bumps still require applicable authorization/review.
+
+The first SMB hypothesis is small cabinetry/woodworking shops. See [commercialization plan](docs/COMMERCIALIZATION.md); test cut-list, sheet layout and model save/reopen as the first sellable workflow. No invented demand, customers, revenue or price validation.
+
+Adopt [central repository standards](https://github.com/drakeg/madmallard-repository-standards) selectively and at a reviewed version, preserving this app's original source and policies. Keep [SECURITY.md](SECURITY.md), README badges, release guidance, CONTRIBUTING and sprint/backlog documents synchronized with ordinary PRs. Do not copy unreviewed templates or use mutable remote CI scripts with write permissions.
 
 ## Invariants
 - All model lengths and coordinates are internally inches; Z is up.

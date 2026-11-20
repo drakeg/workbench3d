@@ -2,6 +2,10 @@
 
 Long-term capabilities and rough priorities, open to discussion in issues. The actionable [backlog](docs/BACKLOG.md), [planned sprints](docs/SPRINTS.md), and [Agile process](docs/AGILE.md) govern execution. ✅ marks existing functionality; some entries were completed after v0.1.
 
+## Ready-to-demo SMB workflow
+- ✅ Insert a reproducible six-panel plywood cabinet using the Sample Cabinet built-in add-on (demo, not a fabrication drawing)
+- [ ] Observe and validate the complete cut-list → sheet-layout → printable PDF customer workflow
+
 ## Core modeling
 - ✅ Line, rectangle, circle, push/pull, move, rotate, tape measure, eraser, paint
 - ✅ Inference: endpoint, midpoint, on-edge, on-face, axis + arrow-key axis lock
@@ -38,7 +42,8 @@ Long-term capabilities and rough priorities, open to discussion in issues. The a
 
 ## Import / export
 - ✅ STL, OBJ, PNG export; `.wb3d` save/open
-- [ ] glTF/GLB export, DXF export (CNC/laser), SVG of faces
+- ✅ glTF/GLB export
+- [ ] DXF export (CNC/laser), SVG of faces
 - ✅ SketchUp `.skp` import (2013 and later): groups, components, colours, tags, scenes, guides
 - [ ] SketchUp import: textures, soft/smooth edges, text and dimensions
 - ✅ STL import (binary and ASCII; user-specified units)
