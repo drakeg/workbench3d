@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013, WB-014, WB-015 | Completed — PR #37 merged; Docker CI passed |
 | 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Delivered early — PRs #35 and #36 merged |
-| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Started early — WB-016 merged, WB-005 in review |
+| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Started early — WB-016 merged; WB-005 in review |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
 | 06 — Workflow and interoperability | Jan 28–Feb 10, 2027 | Expand CNC export and efficient editing | WB-011, WB-009 | Proposed |
@@ -28,7 +28,7 @@
 ## Sprint 03 — Shop output
 - WB-016 (3 pts): generate a six-panel sample cabinet for the cut-list/shop workflow. **Current:** Done — [PR #38](https://github.com/drakeg/workbench3d/pull/38) merged; browser smoke verifies six parts, cut-list rows, and sheet layout. Customer validation remains pending.
 - WB-004 (5 pts): printable orthographic shop drawings with dimensions and predictable scaling.
-- WB-005 (3 pts): material price input, quantity and cost estimation with explicit units, regression tests. **Current:** In Review; user-entered USD per full sheet/board with honest incomplete totals, browser and unit tests pending CI.
+- WB-005 (3 pts): material price input, quantity and cost estimation with explicit units, regression tests. **Current:** In Review — [PR #40](https://github.com/drakeg/workbench3d/pull/40); tests and browser pricing CI passed.
 **Exit:** sample cabinet can yield clear drawings and a reproducible material estimate. Split WB-004 if needed.
 
 ## Sprint 04 — RV planning
@@ -49,7 +49,7 @@
 | Sprint | Delivered PRs | Tests/CI | Carryovers / blockers | Retro / next action |
 |---|---|---|---|---|
 | 01 | [PR #29](https://github.com/drakeg/workbench3d/pull/29), [PR #32](https://github.com/drakeg/workbench3d/pull/32), [PR #34](https://github.com/drakeg/workbench3d/pull/34) merged | Badge and Docker CI passed | No blockers | Verify container and prepare customer demo |
-| 02 | [PR #35](https://github.com/drakeg/workbench3d/pull/35) and [PR #36](https://github.com/drakeg/workbench3d/pull/36) merged | Both PR CI passed | None | Continue fabrication features |
-| 03 | [PR #38](https://github.com/drakeg/workbench3d/pull/38) merged; WB-005 in review | Cabinet UI and save/undo tests passed; pricing CI pending | WB-004 drawings | Validate material pricing, then printable drawings |\n| 04–06 | None yet | Not run | Proposed | Confirm capacity before starting |
+| 02 | PRs #35 and #36 merged | CI passed | None | Continue fabrication features |
+| 03–06 | None yet | Not run | Proposed | Confirm capacity before starting |
 
 Use actual merged PR links and CI results here rather than guessed outcomes. Move unfinished work forward intentionally; urgent P0/P1 work may displace planned features.
