@@ -90,6 +90,12 @@ public struct Tag: Codable, Equatable, Sendable {
     public var name: String
     public var visible: Bool
     public var color: String?
+
+    public init(name: String, visible: Bool = true, color: String? = nil) {
+        self.name = name
+        self.visible = visible
+        self.color = color
+    }
 }
 
 public struct Scene: Codable, Equatable, Sendable {
@@ -97,11 +103,24 @@ public struct Scene: Codable, Equatable, Sendable {
         public var position: V3Array
         public var target: V3Array
         public var perspective: Bool
+
+        public init(position: V3Array, target: V3Array, perspective: Bool) {
+            self.position = position
+            self.target = target
+            self.perspective = perspective
+        }
     }
     public var name: String
     public var camera: Camera
     public var hiddenTags: [String]
     public var activeSection: Int?
+
+    public init(name: String, camera: Camera, hiddenTags: [String] = [], activeSection: Int? = nil) {
+        self.name = name
+        self.camera = camera
+        self.hiddenTags = hiddenTags
+        self.activeSection = activeSection
+    }
 }
 
 public struct SectionPlane: Codable, Equatable, Sendable {

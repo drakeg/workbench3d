@@ -117,6 +117,21 @@ struct ModelCommands: Commands {
                 }
             }
             .disabled(editor == nil)
+            Menu("Scenes") {
+                Button("Add Scene") { editor?.addScene() }
+                    .keyboardShortcut("n", modifiers: [.command, .control])
+                Button("Update Scene") { if let e = editor, let i = e.activeScene { e.updateScene(i) } }
+                    .keyboardShortcut("u", modifiers: [.command, .control])
+                    .disabled(editor?.activeScene == nil)
+                Divider()
+                Button("Previous Scene") { editor?.nextScene(-1) }
+                    .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+                    .disabled(editor?.doc.scenes.isEmpty ?? true)
+                Button("Next Scene") { editor?.nextScene(1) }
+                    .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+                    .disabled(editor?.doc.scenes.isEmpty ?? true)
+            }
+            .disabled(editor == nil)
             Button("Zoom Extents") { editor?.zoomExtents() }
                 .keyboardShortcut("0")
                 .disabled(editor == nil)

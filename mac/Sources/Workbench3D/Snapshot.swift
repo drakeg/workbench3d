@@ -76,9 +76,14 @@ enum Snapshot {
                 for mode in ["light", "dark"] {
                     NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
                     if let g = editor.doc.root.children.first { editor.select(Selection(groups: [g.id])) }
-                    try? await Task.sleep(for: .seconds(0.8))
-                    capture(window, to: "\(dir)/window-\(mode).png")
+                    for panel in SidebarPanel.allCases {
+                        UserDefaults.standard.set(panel.rawValue, forKey: "sidebar.panel")
+                        try? await Task.sleep(for: .seconds(0.8))
+                        let name = panel == .outliner ? "window-\(mode)" : "window-\(panel.rawValue)-\(mode)"
+                        capture(window, to: "\(dir)/\(name).png")
+                    }
                 }
+                UserDefaults.standard.removeObject(forKey: "sidebar.panel")
                 window.close()
             }
 

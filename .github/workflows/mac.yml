@@ -35,6 +35,18 @@ jobs:
       - name: Snapshots
         timeout-minutes: 5
         run: tools/snap.sh; ls -la /tmp/Workbench3D-shots
+      - name: Snapshot previews in the log
+        # Small copies of the window snapshots, base64 between markers, so reviewers (and agents)
+        # that can't download artifacts can still look at them.
+        if: always()
+        run: |
+          for f in /tmp/Workbench3D-shots/window-*.png; do
+            [ -f "$f" ] || continue
+            sips -Z 1000 -s format jpeg -s formatOptions 70 "$f" --out "/tmp/preview.jpg" >/dev/null
+            echo "PREVIEW-BEGIN $(basename "$f" .png)"
+            base64 -i /tmp/preview.jpg | fold -w 1000
+            echo "PREVIEW-END"
+          done
       - name: Crash reports
         if: failure()
         run: |

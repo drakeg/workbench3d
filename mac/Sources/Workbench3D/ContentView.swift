@@ -28,7 +28,7 @@ struct ContentView: View {
     var body: some View {
         let editor = document.sharedEditor
         NavigationSplitView(columnVisibility: $columns) {
-            OutlinerView(editor: editor)
+            SidebarView(editor: editor)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
         } detail: {
             Viewport(editor: editor)
@@ -338,6 +338,10 @@ private struct GroupInfo: View {
             if !b.isEmpty {
                 let d = b.max - b.min
                 LabeledContent("Size", value: "\(editor.fmt(d.x)) × \(editor.fmt(d.y)) × \(editor.fmt(d.z))")
+            }
+            Picker("Tag", selection: Binding(get: { group.tag }, set: { editor.tagSelection($0) })) {
+                Text("Untagged").tag("")
+                ForEach(editor.doc.tags, id: \.name) { Text($0.name).tag($0.name) }
             }
             LabeledContent("Faces", value: "\(group.mesh.faces.count)")
             if let id = group.componentId {
