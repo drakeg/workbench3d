@@ -2,6 +2,10 @@
 
 Long-term capabilities and rough priorities, open to discussion in issues. The actionable [backlog](docs/BACKLOG.md), [planned sprints](docs/SPRINTS.md), and [Agile process](docs/AGILE.md) govern execution. ✅ marks existing functionality; some entries were completed after v0.1.
 
+## Ready-to-demo SMB workflow
+- ✅ Insert a reproducible six-panel plywood cabinet using the Sample Cabinet built-in add-on (demo, not a fabrication drawing)
+- [ ] Observe and validate the complete cut-list → sheet-layout → printable PDF customer workflow
+
 ## Core modeling
 - ✅ Line, rectangle, circle, push/pull, move, rotate, tape measure, eraser, paint
 - ✅ Inference: endpoint, midpoint, on-edge, on-face, axis + arrow-key axis lock
