@@ -5,7 +5,7 @@
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
 |---|---|---|---|---|
 | 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013 | In progress (WB-001/WB-008 merged; badge checks in review) |
-| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
+| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Early implementation (STL and glTF/GLB PRs in review) |
 | 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
@@ -20,7 +20,7 @@
 
 ## Sprint 02 — Import/export
 - WB-002 (3 pts): STL import with unit strategy, unsupported-file feedback and representative fixtures.
-- WB-003 (3 pts): glTF/GLB export preserves group hierarchy/transforms/colors; exported sample opens in a standards-compliant viewer.
+- WB-003 (3 pts): glTF/GLB export preserves group hierarchy/transforms/colors; exported sample opens in a standards-compliant viewer. **Current:** In Review; API and File menu integration implemented, loader compatibility tests pending CI.
 **Exit:** independently verifiable import/export test assets and documented limitations.
 
 ## Sprint 03 — Shop output
