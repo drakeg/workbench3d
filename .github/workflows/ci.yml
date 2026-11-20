@@ -18,6 +18,8 @@ jobs:
         run: |
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
           ./actionlint -color -shellcheck=
+      - name: README badge consistency
+        run: node scripts/validate-badges.mjs
       - name: Same version in package.json and Cargo
         run: node scripts/sync-version.mjs --check
       - run: npm run typecheck
