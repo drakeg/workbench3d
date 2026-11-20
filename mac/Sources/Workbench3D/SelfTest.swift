@@ -87,6 +87,21 @@ enum SelfTest {
         let pages = CGPDFDocument(CGDataProvider(data: pdf as CFData)!)?.numberOfPages ?? 0
         check("the cutting plan is a PDF with the list and the diagrams", pdf.starts(with: Data("%PDF".utf8)) && pages >= 2, "\(pdf.count) bytes, \(pages) pages")
         if !pdf.isEmpty { try? pdf.write(to: URL(fileURLWithPath: "/tmp/Workbench3D-selftest-cutting-plan.pdf")) }
+        // pages as pictures, for the CI log preview
+        try? FileManager.default.createDirectory(atPath: "/tmp/Workbench3D-pdf", withIntermediateDirectories: true)
+        if let doc = CGPDFDocument(CGDataProvider(data: pdf as CFData)!) {
+            for n in 1...min(2, doc.numberOfPages) {
+                guard let page = doc.page(at: n) else { continue }
+                let r = page.getBoxRect(.mediaBox)
+                guard let ctx = CGContext(data: nil, width: Int(r.width * 1.5), height: Int(r.height * 1.5), bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { continue }
+                ctx.setFillColor(.white)
+                ctx.fill(CGRect(x: 0, y: 0, width: r.width * 1.5, height: r.height * 1.5))
+                ctx.scaleBy(x: 1.5, y: 1.5)
+                ctx.drawPDFPage(page)
+                if let img = ctx.makeImage() { Snapshot.writePNG(img, to: "/tmp/Workbench3D-pdf/pdf-page\(n).png") }
+            }
+        }
 
         // tags and scenes (no undo manager: these checks don't group undo steps)
         e.undoManager = nil
