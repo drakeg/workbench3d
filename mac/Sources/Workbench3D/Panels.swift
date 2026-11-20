@@ -273,6 +273,7 @@ struct ScenesView: View {
                                 .onExitCommand { renaming = nil }
                         } else {
                             Text(scene.name)
+                                .foregroundStyle(.primary)
                         }
                         Spacer()
                         if !scene.hiddenTags.isEmpty {

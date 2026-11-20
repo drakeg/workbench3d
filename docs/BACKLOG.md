@@ -16,6 +16,9 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-010 | P3 | 3 | Proposed | 3-point arc tool with exact measurements and undo | Draw tool framework |
 | WB-011 | P2 | 5 | Proposed | DXF/SVG vector export suitable for CNC/laser, with unit and scale checks | Geometry export |
 | WB-013 | P2 | 2 | Done (PR #34) | Verify README technology/workflow/release/community badges, link sources, document conventions, and check them in CI | Root README; CI |
+| WB-MAC-01 | P2 | 3 | In Review (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
+| WB-MAC-02 | P2 | 5 | Proposed | Native Mac app runs the JS add-ons (Lumber, Steel, Cut List) through JavaScriptCore | Add-on API |
+| WB-MAC-03 | P2 | 5 | Proposed | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.
