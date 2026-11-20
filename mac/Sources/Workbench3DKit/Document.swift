@@ -84,6 +84,13 @@ public struct Dimension: Codable, Equatable, Sendable {
     public var a: V3Array
     public var b: V3Array
     public var offset: V3Array
+
+    public init(id: Int, a: V3Array, b: V3Array, offset: V3Array) {
+        self.id = id
+        self.a = a
+        self.b = b
+        self.offset = offset
+    }
 }
 
 public struct Tag: Codable, Equatable, Sendable {
