@@ -41,6 +41,23 @@ describe('dimensioned orthographic shop views', () => {
     expect(first.children).toHaveLength(6);
   });
 
+  it('omits geometry on hidden tags when exporting from the editor', () => {
+    const doc = new WorkbenchDocument();
+    const visible = insertCabinetDemo(doc, doc.root, [0, 0, 0]);
+    const other = insertCabinetDemo(doc, doc.root, [300, 0, 0]);
+    visible.tag = 'Visible';
+    other.tag = 'Hidden';
+    doc.tags = [
+      { name: 'Visible', visible: true },
+      { name: 'Hidden', visible: false },
+    ];
+    const callback = (name: string) => doc.isTagVisible(name);
+    const drawing = collectShopDrawing(doc.root, callback);
+    expect(drawing.bounds.max.x).toBeCloseTo(24);
+    expect(drawing.bounds.min.x).toBeCloseTo(0);
+    expect(exportShopDrawing(doc.root, 'Tagged cabinet', callback).byteLength).toBeGreaterThan(500);
+  });
+
   it('rejects an empty or fully hidden model instead of creating a blank drawing', () => {
     const doc = new WorkbenchDocument();
     expect(() => exportShopDrawing(doc.root)).toThrow(/no visible edges/);
