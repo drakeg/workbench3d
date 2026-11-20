@@ -24,11 +24,11 @@ const axes: { name: string; horizontal: Axis; vertical: Axis }[] = [
 ];
 
 /** Visible world-space edges, including loose geometry. Does not flatten or change the model. */
-export function collectShopDrawing(root: Group): ShopDrawingData {
+export function collectShopDrawing(root: Group, isTagVisible: (tag: string) => boolean = () => true): ShopDrawingData {
   const edges: DrawingEdge[] = [];
   const bounds = new Box3().makeEmpty();
   const visit = (g: Group): void => {
-    if (g.hidden) return;
+    if (g.hidden || (g.tag && !isTagVisible(g.tag))) return;
     const matrix = g.worldMatrix();
     for (const [, [a, b]] of g.mesh.allEdges()) {
       const start = g.mesh.v(a).clone().applyMatrix4(matrix);
@@ -60,8 +60,8 @@ export function collectShopDrawing(root: Group): ShopDrawingData {
  * All three views use the same fixed paper scale, in the model's internal inches.
  * Not a hidden-line drawing or a manufacturing sign-off document.
  */
-export function exportShopDrawing(root: Group, title = 'Workbench3D model'): Uint8Array {
-  const { edges, bounds, scale } = collectShopDrawing(root);
+export function exportShopDrawing(root: Group, title = 'Workbench3D model', isTagVisible: (tag: string) => boolean = () => true): Uint8Array {
+  const { edges, bounds, scale } = collectShopDrawing(root, isTagVisible);
   const pdf = new PdfDoc().page();
   const pt = 72 / scale;
   const size = bounds.getSize(new Vector3());
