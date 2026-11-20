@@ -186,14 +186,26 @@ final class RectangleTool: Tool {
     }
 }
 
+/// Circle, and Polygon (the same tool with few sides, drawn to a corner).
 final class CircleTool: Tool {
-    let id = ToolID.circle
-    let name = "Circle"
-    let symbol = "circle"
-    let shortcut: Character? = "C"
+    let id: ToolID
+    let name: String
+    let symbol: String
+    let shortcut: Character?
     let vcbLabel = "Radius"
-    let hint = "Click the centre, then the radius. Type a radius and press Return, or “36s” for the number of sides."
-    var segments = 24
+    let hint: String
+    var segments: Int
+
+    init(polygon: Bool = false) {
+        id = polygon ? .polygon : .circle
+        name = polygon ? "Polygon" : "Circle"
+        symbol = polygon ? "hexagon" : "circle"
+        shortcut = polygon ? nil : "C"
+        segments = polygon ? 6 : 24
+        hint = polygon
+            ? "Click the centre, then a corner. Type a radius and press Return, or “8s” for the number of sides."
+            : "Click the centre, then the radius. Type a radius and press Return, or “36s” for the number of sides."
+    }
     private var c: V3?
     private var n = V3.zAxis, u = V3.xAxis, v = V3.yAxis
     private var r = 0.0, angle = 0.0

@@ -21,8 +21,8 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-016 | P1 | 3 | Done (PR #38) | Deliver reproducible cabinet sample, material cut-list and print workflow with user-observed errors captured | Demo fixture, cut list |
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
-| WB-MAC-01 | P2 | 3 | In Review (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
+| WB-MAC-01 | P2 | 3 | Done (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
 | WB-MAC-02 | P2 | 5 | Proposed | Native Mac app runs the JS add-ons (Lumber, Steel, Cut List) through JavaScriptCore | Add-on API |
-| WB-MAC-03 | P2 | 5 | Proposed | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
+| WB-MAC-03 | P2 | 5 | In Progress (PR #42: Polygon, Scale) | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.

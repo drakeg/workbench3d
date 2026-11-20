@@ -149,8 +149,8 @@ struct ModelCommands: Commands {
 
         // Tools have single-key shortcuts typed in the 3D view (shown in brackets); a menu key
         // equivalent with no modifier would swallow typing in the Measurements box.
-        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle]) }
-        CommandMenu("Tools") { toolButtons([.select, .eraser, .paint, .pushpull, .offset, .move, .rotate, .tape, .orbit, .pan, .zoom]) }
+        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon]) }
+        CommandMenu("Tools") { toolButtons([.select, .eraser, .paint, .pushpull, .offset, .move, .rotate, .scale, .tape, .orbit, .pan, .zoom]) }
     }
 
     @ViewBuilder

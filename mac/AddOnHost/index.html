@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Workbench3D add-ons</title>
+  <link rel="stylesheet" href="addonhost.css">
+  <style>
+    /* In the Mac app this page is the sheet itself: the dialog fills it, no backdrop or shadow. */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    .modal-backdrop { position: fixed; inset: 0; background: transparent !important; display: flex; backdrop-filter: none !important; }
+    .modal, .modal.wide { width: 100% !important; max-width: none !important; max-height: none !important; height: 100%; margin: 0; border-radius: 0; box-shadow: none; border: 0; display: flex; flex-direction: column; }
+    .modal-body { flex: 1; overflow: auto; }
+  </style>
+</head>
+<body>
+  <script src="addonhost.js"></script>
+</body>
+</html>

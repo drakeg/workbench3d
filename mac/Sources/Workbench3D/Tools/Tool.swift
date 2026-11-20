@@ -3,7 +3,7 @@ import simd
 import Workbench3DKit
 
 enum ToolID: String, CaseIterable, Identifiable {
-    case select, eraser, paint, line, arc, rect, circle, pushpull, offset, move, rotate, tape, orbit, pan, zoom
+    case select, eraser, paint, line, arc, rect, circle, polygon, pushpull, offset, move, rotate, scale, tape, orbit, pan, zoom
     var id: String { rawValue }
 }
 
@@ -88,12 +88,12 @@ extension Tool {
 }
 
 func allTools() -> [Tool] {
-    [SelectTool(), EraserTool(), PaintTool(), LineTool(), ArcTool(), RectangleTool(), CircleTool(), PushPullTool(), OffsetTool(),
-     MoveTool(), RotateTool(), TapeTool(), NavTool(.orbit), NavTool(.pan), NavTool(.zoom)]
+    [SelectTool(), EraserTool(), PaintTool(), LineTool(), ArcTool(), RectangleTool(), CircleTool(), CircleTool(polygon: true), PushPullTool(), OffsetTool(),
+     MoveTool(), RotateTool(), ScaleTool(), TapeTool(), NavTool(.orbit), NavTool(.pan), NavTool(.zoom)]
 }
 
 /// Toolbar groups, in order.
-let toolGroups: [[ToolID]] = [[.select, .eraser, .paint], [.line, .arc, .rect, .circle], [.pushpull, .offset, .move, .rotate], [.tape], [.orbit, .pan, .zoom]]
+let toolGroups: [[ToolID]] = [[.select, .eraser, .paint], [.line, .arc, .rect, .circle, .polygon], [.pushpull, .offset, .move, .rotate, .scale], [.tape], [.orbit, .pan, .zoom]]
 
 /// Arrow keys lock an axis: right = red, left = green, up = blue, down = unlock.
 /// Returns nil when the key isn't an arrow; .some(nil) unlocks.
