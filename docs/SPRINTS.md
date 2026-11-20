@@ -4,7 +4,7 @@
 
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
 |---|---|---|---|---|
-| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013 | In progress (WB-001/WB-008 merged; badge checks in review) |
+| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013 | Completed — WB-001/WB-008/WB-013 merged |
 | 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
 | 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Early implementation (WB-016 cabinet demo in review; dates proposed) |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
@@ -15,7 +15,7 @@
 **Objective:** prevent avoidable invalid dimensions and protect existing model files.
 - WB-001 (2 pts): strict measurement parsing. **Accept:** malformed metric/imperial strings and fractions with zero denominators return null; negative mixed dimensions resolve correctly; focused automated tests. **Current:** Done — [PR #29](https://github.com/drakeg/workbench3d/pull/29) merged; CI passed.
 - WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** Done — [PR #32](https://github.com/drakeg/workbench3d/pull/32) merged.
-- WB-013 (2 pts): README badges and CI validation. **Accept:** only verified stack/workflow/deployment badges, dynamic GitHub metadata, documented maintenance rules and CI validation. **Current:** In Review. This is routine sprint reliability/documentation maintenance.
+- WB-013 (2 pts): README badges and CI validation. **Accept:** only verified stack/workflow/deployment badges, dynamic GitHub metadata, documented maintenance rules and CI validation. **Current:** Done — [PR #34](https://github.com/drakeg/workbench3d/pull/34) merged.
 **Exit:** tests/CI verified; regression cases documented; completed PR URLs recorded below.
 
 ## Sprint 02 — Import/export
