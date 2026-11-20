@@ -23,6 +23,7 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
   - **Cut List:** every part with T × W × L, identical parts grouped, board feet, CSV export. The Layout tab fits the parts onto 4×8 sheets, boards or 20' steel sticks with your saw kerf, an edge trim and the grain direction, shows how many to buy, and prints a cutting plan (PDF) with a diagram of every sheet and board.
 - **Views:** standard views, perspective or parallel projection, X-ray, zoom extents.
 - **Files:** `.wb3d` (JSON, diff-friendly), export STL (for 3D printing, in mm), OBJ and PNG. Autosave keeps your work if the tab closes.
+- **Imports STL meshes.** File → Import supports binary and ASCII `.stl`, with explicit millimetre/inch choice because STL files have no standard unit metadata. Imported meshes become separate, undoable groups. STL has no part hierarchy or material metadata.
 - **Opens SketchUp files.** File → Import… (or drag a `.skp` onto the window) brings in SketchUp 2013 and later models with their groups, components, colours, tags, scenes and guides, read on your computer by the MIT-licensed [openskp](https://www.npmjs.com/package/openskp) library. Textures come in as plain colours for now.
 - **Trackpad friendly:** Option/Alt-drag orbits and Option-Shift-drag pans, so you don't need a 3-button mouse. Turn on *Two-finger scroll pans the view* in Settings to pan with two fingers and pinch to zoom.
 - **Copy and paste** parts between models and windows, and **drag a `.wb3d` file** onto the window to open it.
