@@ -2,6 +2,7 @@ import type { AddOn, WorkbenchAPI } from '../src/plugins/api';
 import type { Group } from '../src/core/document';
 import { LayoutResult, boardWidthFor, layoutParts } from '../src/core/cutlayout';
 import { PdfDoc, RGB, textWidth } from '../src/core/pdf';
+import { CostEstimate, estimateStockCost, money, parseStockPrice } from '../src/core/materialCost';
 
 interface Row {
   name: string;
@@ -34,9 +35,11 @@ interface Settings {
   respectGrain: boolean;
   /** Per stock group key: kind and size the user chose. */
   stock: Record<string, { kind: 'sheet' | 'board'; width: number; length: number }>;
+  /** Local quotes in dollars per purchased sheet or board. Unset is not zero. */
+  prices: Record<string, number>;
 }
 
-const DEFAULTS: Settings = { kerf: 0.125, margin: 0, respectGrain: true, stock: {} };
+const DEFAULTS: Settings = { kerf: 0.125, margin: 0, respectGrain: true, stock: {}, prices: {} };
 
 /** Every group that holds geometry of its own counts as a part. */
 function parts(root: Group): Group[] {
@@ -106,6 +109,14 @@ function stockGroups(rows: Row[], settings: Settings, fmt: (n: number) => string
   return [...groups.values()];
 }
 
+function costEstimate(groups: StockGroup[], layouts: LayoutResult[], settings: Settings): CostEstimate {
+  return estimateStockCost(groups.map((g, i) => ({
+    key: g.key, label: g.label, count: layouts[i].pieces.length,
+    unitPrice: Number.isFinite(settings.prices[g.key]) && settings.prices[g.key] >= 0 ? settings.prices[g.key] : null,
+    unplaced: layouts[i].tooBig.length,
+  })));
+}
+
 function layoutGroup(g: StockGroup, s: Settings): LayoutResult {
   return layoutParts(
     g.rows.map((r) => ({ name: r.name, width: r.w, length: r.l, qty: r.qty, canRotate: g.grainless || !s.respectGrain })),
@@ -151,6 +162,7 @@ function pieceSvg(lay: LayoutResult, i: number, fmt: (n: number) => string, maxW
 }
 
 function buildPdf(groups: StockGroup[], layouts: LayoutResult[], rows: Row[], s: Settings, fmt: (n: number) => string, title: string): Uint8Array {
+  const estimate = costEstimate(groups, layouts, s);
   const pdf = new PdfDoc();
   const M = 36;
   const PW = 792;
@@ -214,6 +226,23 @@ function buildPdf(groups: StockGroup[], layouts: LayoutResult[], rows: Row[], s:
   });
   footer(pageNo++);
 
+  // A separate pricing page avoids truncating longer cut lists.
+  pdf.page(PW, PH);
+  pdf.text('Stock purchase estimate (USD)', M, M + 8, { size: 16, bold: true });
+  pdf.text('User-entered prices per whole sheet/board; excludes tax, shipping, labor and hardware.', M, M + 28, { size: 9, color: muted });
+  let costY = M + 54;
+  for (const line of estimate.lines) {
+    if (costY > PH - 86) { footer(pageNo++); pdf.page(PW, PH); costY = M + 18; }
+    pdf.text(`${line.label}: ${line.count} × ${money(line.unitPrice)} = ${money(line.extended)}`, M, costY, { size: 10 });
+    costY += 18;
+  }
+  if (costY > PH - 84) { footer(pageNo++); pdf.page(PW, PH); costY = M + 18; }
+  pdf.text(`Quoted subtotal: ${money(estimate.quotedSubtotal)}`, M, costY + 8, { size: 12, bold: true });
+  pdf.text(estimate.grandTotal === null
+    ? `Estimate incomplete: ${estimate.missingQuotes} unquoted stock group(s); ${estimate.unplacedParts} unplaced part(s)`
+    : `Estimated material total: ${money(estimate.grandTotal)}`, M, costY + 26, { size: 10 });
+  footer(pageNo++);
+
   // Then the diagrams: as many pieces per page as fit, length left to right
   let yy = PH; // start a new page
   groups.forEach((g, gi) => {
@@ -266,7 +295,12 @@ const cutlist: AddOn = {
   activate(api) {
     const load = (): Settings => {
       try {
-        return { ...DEFAULTS, ...JSON.parse(api.storage.get('settings') ?? '{}') };
+        const saved = JSON.parse(api.storage.get('settings') ?? '{}') as Partial<Settings>;
+        const prices: Record<string, number> = {};
+        for (const [key, value] of Object.entries(saved.prices ?? {})) {
+          if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && Math.round(value * 100) / 100 === value) prices[key] = value;
+        }
+        return { ...DEFAULTS, ...saved, stock: saved.stock ?? {}, prices };
       } catch {
         return { ...DEFAULTS };
       }
@@ -283,6 +317,7 @@ const cutlist: AddOn = {
       const settings = load();
       let groups = stockGroups(rows, settings, f);
       let layouts = groups.map((g) => layoutGroup(g, settings));
+      let estimate = costEstimate(groups, layouts, settings);
 
       const bf = (r: Row) => (r.t * r.w * r.l * r.qty) / 144;
       const totalBF = rows.reduce((s, r) => s + bf(r), 0);
@@ -313,9 +348,12 @@ const cutlist: AddOn = {
             <label class="check"><input name="grain" type="checkbox" ${settings.respectGrain ? 'checked' : ''}> Keep grain along each part's length</label>
           </div>
           <div class="cut-groups"></div>
+          <div class="cut-estimate" aria-live="polite"></div>
+          <p class="muted">Prices are entered in USD per whole sheet or board, saved in this browser, and exclude tax, shipping, labor and hardware. A blank price is unknown, not free.</p>
         </section>`;
 
       const groupsEl = root.querySelector<HTMLElement>('.cut-groups')!;
+      const estimateEl = root.querySelector<HTMLElement>('.cut-estimate')!;
       const render = () => {
         groupsEl.innerHTML = groups
           .map((g, i) => {
@@ -331,6 +369,7 @@ const cutlist: AddOn = {
                 </select>
                 <label>${g.kind === 'sheet' ? 'Sheet' : 'Board'} <input name="width" type="text" size="6" value="${esc(f(g.width))}" aria-label="Stock width"></label>
                 × <input name="length" type="text" size="6" value="${esc(f(g.length))}" aria-label="Stock length">
+                <label>USD per ${g.kind === 'sheet' ? 'sheet' : 'board'} <input name="price" inputmode="decimal" type="text" size="8" aria-label="Price per stock unit for ${esc(g.label)}" value="${settings.prices[g.key] === undefined ? '' : settings.prices[g.key].toFixed(2)}"></label>
                 <span class="muted">${n} ${g.kind === 'sheet' ? (n === 1 ? 'sheet' : 'sheets') : n === 1 ? 'board' : 'boards'}, ${avg}% used</span>
               </div>
               ${lay.tooBig.map((b) => `<p class="error">${esc(b.name)} (${f(b.length)} × ${f(b.width)}) doesn't fit on this stock.</p>`).join('')}
@@ -338,6 +377,10 @@ const cutlist: AddOn = {
             </div>`;
           })
           .join('');
+        estimate = costEstimate(groups, layouts, settings);
+        estimateEl.textContent = estimate.grandTotal === null
+          ? `Quoted subtotal ${money(estimate.quotedSubtotal)} — incomplete: ${estimate.missingQuotes} unquoted stock group(s), ${estimate.unplacedParts} unplaced part(s).`
+          : `Estimated stock material total: ${money(estimate.grandTotal)} (${estimate.lines.reduce((n, line) => n + line.count, 0)} purchased stock units).`;
       };
       const recompute = () => {
         groups = stockGroups(rows, settings, f);
@@ -366,6 +409,14 @@ const cutlist: AddOn = {
           const g = groups.find((x) => x.key === key);
           if (!g) return;
           const cur = { kind: g.kind, width: g.width, length: g.length };
+          if (t.name === 'price') {
+            const entered = t.value.trim();
+            const price = parseStockPrice(entered);
+            if (price === null) {
+              delete settings.prices[g.key];
+              if (entered) api.ui.toast('Invalid stock price. Enter USD with up to two decimal places, or leave blank for unknown.', 'error');
+            } else settings.prices[g.key] = price;
+          }
           if (t.name === 'kind') {
             cur.kind = t.value as 'sheet' | 'board';
             if (cur.kind === 'sheet') Object.assign(cur, { width: 48, length: 96 });
@@ -385,6 +436,9 @@ const cutlist: AddOn = {
           const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
           const csv = ['Qty,Part,Material,Thickness,Width,Length,Thickness (in),Width (in),Length (in)']
             .concat(rows.map((r) => [r.qty, q(r.name), q(r.material), q(f(r.t)), q(f(r.w)), q(f(r.l)), r.t.toFixed(4), r.w.toFixed(4), r.l.toFixed(4)].join(',')))
+            .concat(['', 'Stock,Stock units,USD per stock unit,Extended USD,Unplaced parts'])
+            .concat(estimate.lines.map((l) => [q(l.label), l.count, l.unitPrice ?? '', l.extended ?? '', l.unplaced].join(',')))
+            .concat([`Quoted subtotal USD,${estimate.quotedSubtotal.toFixed(2)}`, `Estimated material total USD,${estimate.grandTotal === null ? 'INCOMPLETE' : estimate.grandTotal.toFixed(2)}`])
             .join('\n');
           api.ui.download('cut-list.csv', csv);
         } else if (choice === 'Download PDF') {
