@@ -60,7 +60,7 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
 
 **Desktop app:** download the installer for your system from the [Releases page](https://github.com/drakeg/workbench3d/releases). It follows each platform's conventions:
 
-- **Mac:** a native app for Apple silicon (M1 and later) on macOS 26 or later, written in Swift with a Metal 3D view (source in [`mac/`](mac)). Each model is its own document window with autosave and versions, Open Recent, and full undo. Trackpad gestures: scroll to pan, pinch to zoom, Option-scroll to orbit. It opens the same `.wb3d` files as the web app.
+- **Mac:** a native app for Apple silicon (M1 and later) on macOS 26 or later, written in Swift with a Metal 3D view (source in [`mac/`](mac)). Each model is its own document window with autosave and versions, Open Recent, and full undo. Trackpad gestures: scroll to pan, pinch to zoom, Option-scroll to orbit. It opens the same `.wb3d` files as the web app. The native tool palette includes Polygon (typed sides/radius) and Scale (grips, typed factor or size, center scaling and mirroring); native Dimension, Section and SketchUp import remain future work.
 - **Windows:** Windows 11 type and spacing, sentence-case menus, Settings in the File menu and the toolbar gear (with an app theme choice), F1 help, F2 rename, Shift+F10 context menu, light/dark theme, and `.wb3d` files open from Explorer.
 On macOS the app is not yet notarized by Apple. The first time you open it, macOS blocks it: go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
