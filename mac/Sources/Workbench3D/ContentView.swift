@@ -66,6 +66,8 @@ struct Viewport: View {
                 .accessibilityLabel("3D model view")
             SnapMarker(editor: editor)
                 .allowsHitTesting(false)
+            DimensionLabels(editor: editor)
+                .allowsHitTesting(false)
             ToolPalette(editor: editor)
                 .padding(Space.md)
         }
@@ -83,6 +85,39 @@ struct Viewport: View {
             }
         }
         .animation(.default, value: editor.toast)
+    }
+}
+
+
+/// Human-readable lengths attached to the persistent 3D dimension lines.
+/// Kept outside Metal so the labels scale with UI accessibility settings
+/// and remain legible when the camera zooms.
+struct DimensionLabels: View {
+    var editor: Editor
+
+    var body: some View {
+        let _ = editor.version
+        let _ = editor.viewVersion
+        ZStack(alignment: .topLeading) {
+            ForEach(editor.doc.dimensions, id: \.id) { d in
+                if d.a.count == 3, d.b.count == 3, d.offset.count == 3 {
+                    let a = V3(d.a[0], d.a[1], d.a[2])
+                    let b = V3(d.b[0], d.b[1], d.b[2])
+                    let offset = V3(d.offset[0], d.offset[1], d.offset[2])
+                    let point = editor.camera.project((a + b) / 2 + offset)
+                    if !point.behind, a.distance(to: b).isFinite, a.distance(to: b) > 1e-5 {
+                        Text(editor.fmt(a.distance(to: b)))
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 3)
+                            .background(.regularMaterial, in: .capsule)
+                            .fixedSize()
+                            .position(x: point.x, y: point.y - 12)
+                    }
+                }
+            }
+        }
+        .accessibilityLabel("Model dimensions")
     }
 }
 

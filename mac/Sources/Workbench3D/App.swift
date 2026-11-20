@@ -149,7 +149,7 @@ struct ModelCommands: Commands {
 
         // Tools have single-key shortcuts typed in the 3D view (shown in brackets); a menu key
         // equivalent with no modifier would swallow typing in the Measurements box.
-        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon]) }
+        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon, .dimension]) }
         CommandMenu("Shop") {
             Button("Cut List…") { editor?.showCutList = true }
                 .keyboardShortcut("l", modifiers: [.command, .shift])

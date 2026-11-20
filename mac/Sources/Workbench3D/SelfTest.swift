@@ -225,6 +225,40 @@ enum SelfTest {
         um3.undo()
         check("Undo Scale restores the size", abs(sc.doc.bounds.size.x - 24) < 1e-6)
 
+        // Native linear dimensions are annotations (no mesh mutations), support undo,
+        // and round-trip through the same .wb3d file as the browser editor.
+        let de = Editor(document: ModelDocument(model: WBDocument()))
+        let dimUndo = UndoManager()
+        dimUndo.groupsByEvent = false
+        de.undoManager = dimUndo
+        de.camera.size = CGSize(width: 1000, height: 700)
+        de.camera.look(from: V3(0, -0.01, 200), at: .zero)
+        de.setTool(.dimension)
+        dimUndo.beginUndoGrouping()
+        func dimensionEvent(_ p: V3) -> ToolEvent {
+            let screen = de.camera.project(p).point
+            return ToolEvent(pt: screen, ray: de.camera.ray(at: screen))
+        }
+        for point in [V3(0, 0, 0), V3(24, 0, 0), V3(12, 5, 0)] {
+            let event = dimensionEvent(point)
+            de.tool.mouseMoved(event, de)
+            de.tool.mouseDown(event, de)
+        }
+        dimUndo.endUndoGrouping()
+        let dim = de.doc.dimensions.first
+        let span = dim.map { V3($0.b[0] - $0.a[0], $0.b[1] - $0.a[1], $0.b[2] - $0.a[2]).length } ?? 0
+        check("Dimension makes a saved 24-inch linear annotation",
+              de.doc.dimensions.count == 1 && abs(span - 24) < 1e-4 && (dim?.offset.count == 3),
+              "count \(de.doc.dimensions.count), span \(span)")
+        if let saved = try? de.doc.data(), let reloaded = try? WBDocument(data: saved) {
+            check("Dimension persists through save and reopen", reloaded.dimensions == de.doc.dimensions)
+        } else {
+            check("Dimension persists through save and reopen", false, "failed to serialize")
+        }
+        dimUndo.undo()
+        check("Undo Dimension removes the annotation without altering model geometry",
+              de.doc.dimensions.isEmpty && de.doc.root.mesh.faces.isEmpty)
+
         check("the Measurements box parses feet and inches", Units.parse("2' 6\"") == 30)
         check("…and millimetres", abs((Units.parse("254mm") ?? 0) - 10) < 1e-9)
 
