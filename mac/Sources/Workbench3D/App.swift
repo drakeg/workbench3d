@@ -149,13 +149,13 @@ struct ModelCommands: Commands {
 
         // Tools have single-key shortcuts typed in the 3D view (shown in brackets); a menu key
         // equivalent with no modifier would swallow typing in the Measurements box.
-        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle]) }
+        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon]) }
         CommandMenu("Shop") {
             Button("Cut List…") { editor?.showCutList = true }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(editor == nil)
         }
-        CommandMenu("Tools") { toolButtons([.select, .eraser, .paint, .pushpull, .offset, .move, .rotate, .tape, .orbit, .pan, .zoom]) }
+        CommandMenu("Tools") { toolButtons([.select, .eraser, .paint, .pushpull, .offset, .move, .rotate, .scale, .tape, .orbit, .pan, .zoom]) }
     }
 
     @ViewBuilder

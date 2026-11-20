@@ -178,6 +178,53 @@ enum SelfTest {
         blank.tool.mouseUp(event(c), blank)
         check("Select picks the face under the cursor", blank.selection.faces.count == 1)
 
+        // Polygon: typed sides, then radius
+        let poly = Editor(document: ModelDocument(model: WBDocument()))
+        poly.camera.size = CGSize(width: 1000, height: 700)
+        poly.camera.look(from: V3(0, -0.01, 200), at: .zero)
+        poly.setTool(.polygon)
+        let pc = CGPoint(x: 500, y: 350)
+        poly.tool.mouseMoved(ToolEvent(pt: pc, ray: poly.camera.ray(at: pc)), poly)
+        poly.submitVCB("8s")
+        poly.tool.mouseDown(ToolEvent(pt: pc, ray: poly.camera.ray(at: pc)), poly)
+        let pc2 = CGPoint(x: 560, y: 350)
+        poly.tool.mouseMoved(ToolEvent(pt: pc2, ray: poly.camera.ray(at: pc2)), poly)
+        poly.submitVCB("6")
+        if let f = poly.doc.root.mesh.faces.values.first {
+            let expected = 4 * 36 * sin(Double.pi / 4) // n/2 · r² · sin(2π/n), n = 8
+            check("Polygon with 8 sides and radius 6 makes an octagon", f.outer.count == 8 && abs(poly.doc.root.mesh.area(f) - expected) < 1e-6,
+                  "\(f.outer.count) sides, area \(poly.doc.root.mesh.area(f))")
+        } else {
+            check("Polygon with 8 sides and radius 6 makes an octagon", false, "no face")
+        }
+
+        // Scale: drag the top corner grip of a 24 x 12 x 6 group, type 2
+        let sc = Editor(document: ModelDocument(model: WBDocument()))
+        let um3 = UndoManager()
+        um3.groupsByEvent = false
+        sc.undoManager = um3
+        let boxGroup = sc.doc.newGroup("Box")
+        let base = boxGroup.mesh.addPolygon([V3(0, 0, 0), V3(24, 0, 0), V3(24, 12, 0), V3(0, 12, 0)])!
+        _ = boxGroup.mesh.pushPull(base, -6)
+        sc.doc.root.add(boxGroup)
+        sc.camera.size = CGSize(width: 1000, height: 700)
+        sc.setView(.iso)
+        sc.select(Selection(groups: [boxGroup.id]))
+        sc.setTool(.scale)
+        let corner = sc.camera.project(V3(24, 12, 6))
+        let cp = CGPoint(x: corner.x, y: corner.y)
+        um3.beginUndoGrouping()
+        sc.tool.mouseMoved(ToolEvent(pt: cp, ray: sc.camera.ray(at: cp)), sc)
+        sc.tool.mouseDown(ToolEvent(pt: cp, ray: sc.camera.ray(at: cp)), sc)
+        sc.submitVCB("2")
+        um3.endUndoGrouping()
+        let sb = sc.doc.bounds
+        check("Scale ×2 from a corner doubles every size and keeps the opposite corner",
+              abs(sb.size.x - 48) < 1e-6 && abs(sb.size.y - 24) < 1e-6 && abs(sb.size.z - 12) < 1e-6 && sb.min.length < 1e-6,
+              "size \(sb.size), min \(sb.min)")
+        um3.undo()
+        check("Undo Scale restores the size", abs(sc.doc.bounds.size.x - 24) < 1e-6)
+
         check("the Measurements box parses feet and inches", Units.parse("2' 6\"") == 30)
         check("…and millimetres", abs((Units.parse("254mm") ?? 0) - 10) < 1e-9)
 
