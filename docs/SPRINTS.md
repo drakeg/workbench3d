@@ -5,7 +5,7 @@
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
 |---|---|---|---|---|
 | 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013, WB-014, WB-015 | Maintenance: badge PR merged; Docker/standards in review |
-| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Early implementation — [PR #35](https://github.com/drakeg/workbench3d/pull/35) and [PR #36](https://github.com/drakeg/workbench3d/pull/36) in review |
+| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Early implementation — [PR #35](https://github.com/drakeg/workbench3d/pull/35) merged; [PR #36](https://github.com/drakeg/workbench3d/pull/36) in review |
 | 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
