@@ -618,6 +618,14 @@ await page.click('.cutlist-view [data-tab=layout]');
 const cabinetSheets = await page.locator('.cutlist-view .cut-sheet').count();
 const tooLarge = await page.locator('.cutlist-view .cut-groups .error').count();
 check('sample cabinet layout fits plywood stock', cabinetSheets > 0 && tooLarge === 0, { cabinetSheets, tooLarge });
+const beforeQuote = await page.locator('.cutlist-view .cut-estimate').innerText();
+check('unquoted cabinet stock shows incomplete estimate', beforeQuote.includes('incomplete') && beforeQuote.includes('unquoted'), beforeQuote);
+const priceField = page.locator('.cutlist-view input[name="price"]').first();
+await priceField.fill('48.75');
+await priceField.dispatchEvent('change');
+const pricedEstimate = await page.locator('.cutlist-view .cut-estimate').innerText();
+check('cabinet material estimate uses whole sheet price', pricedEstimate.includes('$48.75') && pricedEstimate.includes('Estimated stock material total'), pricedEstimate);
+await page.screenshot({ path: `${out}/cabinet-cost-estimate.png` });
 await page.screenshot({ path: `${out}/cabinet-demo.png` });
 
 check('no page errors', errors.length === 0, errors);
