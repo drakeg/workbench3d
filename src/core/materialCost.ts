@@ -38,7 +38,7 @@ export function estimateStockCost(stocks: readonly PricedStock[]): CostEstimate 
       throw new Error('Invalid stock counts');
     }
     const price = stock.unitPrice;
-    if (price !== null && (price < 0 || !Number.isFinite(price) || Math.round(price * 100) !== price * 100)) {
+    if (price !== null && (price < 0 || !Number.isFinite(price) || Math.abs(Math.round(price * 100) - price * 100) > 1e-7)) {
       throw new Error('Invalid stock price');
     }
     const totalCents = price === null ? null : Math.round(price * 100) * stock.count;
