@@ -42,6 +42,7 @@ Draw a rectangle, push/pull it into a board, snap to edges and midpoints, group 
 - **Groups and components.** Parts stay separate and don't stick to each other. Components are reusable parts: edit one and every copy updates (Make Unique breaks the link). Double-click to edit inside.
 - **Tools:** Select, Eraser, Paint, Line, Arc, Rectangle, Circle, Polygon, Push/Pull, Offset, Move (with copy and arrays), Rotate (15° snaps), Scale (grips, typed factors or sizes, mirror), Tape Measure (guide lines and points), Dimension, Section Plane, Orbit, Pan, Zoom.
 - **Organize:** Tags (layers) with visibility, Scenes (saved views with tag state, PageUp/PageDown), Outliner, right-click context menu.
+- **Ready-to-edit sample cabinet.** Add-ons → Insert Sample Cabinet… creates a 24 × 24 × 30 in six-panel plywood cabinet as one undoable operation. Open Cut List to review dimensions, layout and printable plans. This is a demo, not a fabrication specification.
 - **Built-in add-ons:**
   - **Lumber:** real dressed sizes (a 2x4 is 1½" × 3½"), plywood and MDF sheets.
   - **Steel Profiles:** square, rectangular and round tube, angle, channel, flat bar, round bar, by gauge.
