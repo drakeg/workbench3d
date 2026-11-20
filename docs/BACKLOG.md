@@ -16,6 +16,9 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-010 | P3 | 3 | Proposed | 3-point arc tool with exact measurements and undo | Draw tool framework |
 | WB-011 | P2 | 5 | Proposed | DXF/SVG vector export suitable for CNC/laser, with unit and scale checks | Geometry export |
 | WB-013 | P2 | 2 | In Review | Verify README technology/workflow/release/community badges, link sources, document conventions, and check them in CI | Root README; CI |
+| WB-014 | P1 | 3 | In Review | Supply LAN-accessible Docker browser testing, verify container response in CI and preserve default web hosting | Docker Compose, CI |
+| WB-015 | P2 | 2 | In Review | Adopt security disclosure, central standards and evidence-based SMB validation workflow | SECURITY, AGENTS, commercialization |
+| WB-016 | P1 | 3 | Ready | Deliver reproducible cabinet sample, material cut-list and print workflow with user-observed errors captured | Demo fixture, cut list |
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.
