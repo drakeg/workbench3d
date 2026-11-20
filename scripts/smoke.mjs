@@ -600,5 +600,25 @@ check('imports a SketchUp file as one group with its components and tags',
 await page.waitForTimeout(150);
 await page.screenshot({ path: `${out}/skp-import.png` });
 
+// SMB demo: users can generate an editable cabinet and inspect its cut-list layout.
+await reset();
+await page.evaluate(() => window.workbench.runCommand('cabinet-demo.insert'));
+await page.waitForFunction(() => window.workbench.doc.root.children[0]?.children.length === 6);
+const cabinetDemo = await page.evaluate(() => {
+  const cabinet = window.workbench.doc.root.children[0];
+  return { parts: cabinet.children.length, names: cabinet.children.map((p) => p.name), material: cabinet.children.map((p) => p.attributes.material) };
+});
+check('built-in sample cabinet inserts six plywood parts', cabinetDemo.parts === 6 &&
+  cabinetDemo.material.every((m) => m === 'Plywood'), cabinetDemo);
+await page.evaluate(() => window.workbench.runCommand('cutlist.show'));
+await page.waitForSelector('.cutlist-view .cutlist tbody tr');
+const cabinetRows = await page.locator('.cutlist-view .cutlist tbody tr').count();
+check('sample cabinet cut list contains six part rows', cabinetRows === 6, cabinetRows);
+await page.click('.cutlist-view [data-tab=layout]');
+const cabinetSheets = await page.locator('.cutlist-view .cut-sheet').count();
+const tooLarge = await page.locator('.cutlist-view .cut-groups .error').count();
+check('sample cabinet layout fits plywood stock', cabinetSheets > 0 && tooLarge === 0, { cabinetSheets, tooLarge });
+await page.screenshot({ path: `${out}/cabinet-demo.png` });
+
 check('no page errors', errors.length === 0, errors);
 await browser.close();
