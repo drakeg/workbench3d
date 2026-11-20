@@ -7,7 +7,7 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-001 | P1 | 2 | Done (PR #29) | Reject malformed measurements and zero denominators; signed feet/inches parse correctly and have regression tests | None |
 | WB-002 | P2 | 3 | Done (PR #35) | Import STL mesh into a new model/group with predictable units, useful errors and fixtures | Import architecture investigation |
 | WB-003 | P2 | 3 | Done (PR #36) | Export glTF/GLB with preserved group transforms and colors and loadable fixture | Mesh export coverage |
-| WB-004 | P2 | 5 | In Review (PR #41, first increment) | Offer printable orthographic shop drawing with dimensions and correct page scale | Dimension and PDF modules |
+| WB-004 | P2 | 5 | In progress (wireframe increment merged in PR #41) | Offer printable orthographic shop drawing with dimensions and correct page scale | Dimension and PDF modules |
 | WB-005 | P2 | 3 | Done (PR #40) | Cut-list estimate accepts stock prices and displays calculated cost totals | Cut-list layout |
 | WB-006 | P2 | 5 | Proposed | RV floor plan starter templates plus commonly used appliance shapes and editable dimensions | Add-on API |
 | WB-007 | P2 | 5 | Proposed | Follow Me sweep can construct a simple profile along a path; test closed solids and undo | Geometry engine |
