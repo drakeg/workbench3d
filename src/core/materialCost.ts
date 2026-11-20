@@ -21,6 +21,14 @@ export interface CostEstimate {
   unplacedParts: number;
 }
 
+/** Quotes belong to the actual purchasable stock format, not just a material/thickness.
+ * Store dimensions in 1/64-inch increments, matching cut-list grouping precision.
+ */
+export function stockQuoteKey(group: string, kind: 'sheet' | 'board', width: number, length: number): string {
+  if (![width, length].every((n) => Number.isFinite(n) && n > 0)) throw new Error('Invalid stock dimensions');
+  return JSON.stringify([group, kind, Math.round(width * 64), Math.round(length * 64)]);
+}
+
 /** Reject negative, non-finite, malformed and fractional-cent prices. Blank means unknown, not free. */
 export function parseStockPrice(value: string): number | null {
   const normalized = value.trim();
