@@ -16,6 +16,7 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-010 | P3 | 3 | Proposed | 3-point arc tool with exact measurements and undo | Draw tool framework |
 | WB-011 | P2 | 5 | Proposed | DXF/SVG vector export suitable for CNC/laser, with unit and scale checks | Geometry export |
 | WB-013 | P2 | 2 | In Review | Verify README technology/workflow/release/community badges, link sources, document conventions, and check them in CI | Root README; CI |
+| WB-016 | P1 | 3 | In Review | Built-in six-panel 24-inch cabinet sample supports a repeatable cut-list demo; verify geometry, save/reopen and undo | Cut List add-on |
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.
