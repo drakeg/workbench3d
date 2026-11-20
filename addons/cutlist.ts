@@ -354,6 +354,12 @@ const cutlist: AddOn = {
 
       const groupsEl = root.querySelector<HTMLElement>('.cut-groups')!;
       const estimateEl = root.querySelector<HTMLElement>('.cut-estimate')!;
+      const updateEstimate = () => {
+        estimate = costEstimate(groups, layouts, settings);
+        estimateEl.textContent = estimate.grandTotal === null
+          ? `Quoted subtotal ${money(estimate.quotedSubtotal)} — incomplete: ${estimate.missingQuotes} unquoted stock group(s), ${estimate.unplacedParts} unplaced part(s).`
+          : `Estimated stock material total: ${money(estimate.grandTotal)} (${estimate.lines.reduce((n, line) => n + line.count, 0)} purchased stock units).`;
+      };
       const render = () => {
         groupsEl.innerHTML = groups
           .map((g, i) => {
@@ -377,10 +383,7 @@ const cutlist: AddOn = {
             </div>`;
           })
           .join('');
-        estimate = costEstimate(groups, layouts, settings);
-        estimateEl.textContent = estimate.grandTotal === null
-          ? `Quoted subtotal ${money(estimate.quotedSubtotal)} — incomplete: ${estimate.missingQuotes} unquoted stock group(s), ${estimate.unplacedParts} unplaced part(s).`
-          : `Estimated stock material total: ${money(estimate.grandTotal)} (${estimate.lines.reduce((n, line) => n + line.count, 0)} purchased stock units).`;
+        updateEstimate();
       };
       const recompute = () => {
         groups = stockGroups(rows, settings, f);
@@ -416,6 +419,9 @@ const cutlist: AddOn = {
               delete settings.prices[g.key];
               if (entered) api.ui.toast('Invalid stock price. Enter USD with up to two decimal places, or leave blank for unknown.', 'error');
             } else settings.prices[g.key] = price;
+            save(settings);
+            updateEstimate(); // Don't replace a focused input during blur/change.
+            return;
           }
           if (t.name === 'kind') {
             cur.kind = t.value as 'sheet' | 'board';
