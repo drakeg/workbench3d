@@ -32,6 +32,8 @@ CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node 
 
 Preview Mac or Windows conventions in any browser: `http://localhost:5173/?platform=mac` or `?platform=windows`, plus `&theme=dark`.
 
+LAN browser test environment: `cp .env.example .env && docker compose up -d --build`. Open `http://<host-IP>:8087` from a trusted LAN machine, then `docker compose down`. Use `WB3D_BIND_ADDRESS=127.0.0.1` if LAN access is unnecessary. No user files are kept in a container database.
+
 Desktop app: install [Rust](https://rustup.rs) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/), then `npm run tauri dev`.
 
 Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it's short.
@@ -56,6 +58,10 @@ Maintain the verified badges beneath the README project title whenever dependenc
 - Menu labels are written in Title Case; `menuLabel()` turns them into sentence case on Windows. Show shortcuts with `kbd()`, never by hand.
 - Lengths are inches internally. Convert only at the UI edge with `parseLength` / `formatLength`.
 - Original work only. Don't copy code, icons, textures or models from proprietary software. If you port code from another open-source project, its license must be MIT-compatible and credited.
+
+## Security and customer workflows
+
+Read [SECURITY.md](SECURITY.md) before introducing import formats, add-ons or public exposure. Verify the SMB demo workflow and record real observations using [docs/COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md); avoid invented customer validation. Standards updates should follow the opt-in [central adoption guide](https://github.com/drakeg/madmallard-repository-standards/blob/main/ADOPTION.md) without overwriting repository-specific rules.
 
 ## Releases
 

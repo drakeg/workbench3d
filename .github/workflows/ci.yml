@@ -36,3 +36,28 @@ jobs:
         with:
           name: screenshots
           path: '*.png'
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build and start LAN test image
+        run: |
+          WB3D_BIND_ADDRESS=127.0.0.1 WB3D_PORT=18887 docker compose up -d --build
+      - name: Verify HTTP health and browser app
+        run: |
+          set -euo pipefail
+          for n in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18887/healthz > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:18887/healthz | grep -Fxq ok
+          curl --fail --silent http://127.0.0.1:18887/ | grep -Eq '<html|<!doctype html' 
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Stop test container
+        if: always()
+        run: WB3D_BIND_ADDRESS=127.0.0.1 WB3D_PORT=18887 docker compose down --remove-orphans

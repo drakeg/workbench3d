@@ -11,3 +11,8 @@ dist/
 mac/dmg/
 mac/*.dmg
 mac/Resources/
+
+# Local testing overrides; never commit environment credentials
+.env
+.env.*
+!.env.example
