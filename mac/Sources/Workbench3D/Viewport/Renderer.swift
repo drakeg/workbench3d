@@ -229,7 +229,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         for dimension in doc.dimensions {
             guard dimension.a.count == 3, dimension.b.count == 3, dimension.offset.count == 3 else { continue }
             let values = dimension.a + dimension.b + dimension.offset
-            guard values.allSatisfy(\\.isFinite) else { continue }
+            guard values.allSatisfy(\.isFinite) else { continue }
             let a = V3(dimension.a[0], dimension.a[1], dimension.a[2])
             let b = V3(dimension.b[0], dimension.b[1], dimension.b[2])
             let o = V3(dimension.offset[0], dimension.offset[1], dimension.offset[2])
