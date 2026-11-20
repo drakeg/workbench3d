@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013 | In progress (WB-001/WB-008 merged; badge checks in review) |
 | 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
-| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
+| 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005, WB-016 | Early implementation (WB-016 cabinet demo in review; dates proposed) |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
 | 06 — Workflow and interoperability | Jan 28–Feb 10, 2027 | Expand CNC export and efficient editing | WB-011, WB-009 | Proposed |
@@ -24,6 +24,7 @@
 **Exit:** independently verifiable import/export test assets and documented limitations.
 
 ## Sprint 03 — Shop output
+- WB-016 (3 pts): create a six-panel sample cabinet as one undoable action to demonstrate part sizes, cut-list and layout. **Current:** In Review (implementation/tests pending CI and merge). Validate the full interactive cutting-plan workflow before claiming a finished customer demo.
 - WB-004 (5 pts): printable orthographic shop drawings with dimensions and predictable scaling.
 - WB-005 (3 pts): material price input, quantity and cost estimation with explicit units, regression tests.
 **Exit:** sample cabinet can yield clear drawings and a reproducible material estimate. Split WB-004 if needed.
