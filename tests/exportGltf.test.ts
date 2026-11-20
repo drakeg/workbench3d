@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Vector3, Matrix4 } from 'three';
+import { Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { WorkbenchDocument } from '../src/core/document';
 import { exportGLB, exportGLTF } from '../src/core/exportGltf';
