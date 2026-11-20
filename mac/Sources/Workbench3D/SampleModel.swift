@@ -33,6 +33,14 @@ enum SampleModel {
                 _ = m.pushPull(pocket, -3)
             }
         }
+        // tags and a scene, so the sidebar panels have something to show
+        doc.tags = [Tag(name: "Legs", color: "#d97706"), Tag(name: "Top", color: "#2563eb"), Tag(name: "Shop", visible: false, color: "#16a34a")]
+        for g in doc.root.children where g.componentId != nil { g.tag = "Legs" }
+        doc.root.children.first?.tag = "Top"
+        doc.scenes = [
+            Workbench3DKit.Scene(name: "Overview", camera: .init(position: [-60, -90, 70], target: [24, 12, 15], perspective: true)),
+            Workbench3DKit.Scene(name: "Front", camera: .init(position: [24, -140, 18], target: [24, 12, 18], perspective: false), hiddenTags: ["Shop"]),
+        ]
         doc.guides.append(Guide(id: doc.nextItemId, point: [0, -6, 0], dir: [1, 0, 0]))
         doc.nextItemId += 1
         return doc

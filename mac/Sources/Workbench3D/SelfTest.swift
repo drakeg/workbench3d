@@ -74,6 +74,38 @@ enum SelfTest {
             check("a saved model opens with the same geometry", false, "save or load threw")
         }
 
+        // tags and scenes (no undo manager: these checks don't group undo steps)
+        e.undoManager = nil
+        check("the sample model has tags and scenes", e.doc.tags.count == 3 && e.doc.scenes.count == 2)
+        e.doc.tags = []
+        e.doc.scenes = []
+        for g in e.doc.root.all { g.tag = "" }
+        let tagName = e.addTag()
+        let tagged = e.doc.root.children[0]
+        e.select(Selection(groups: [tagged.id]))
+        e.tagSelection(tagName)
+        check("Tag Selection puts a group on a tag", tagged.tag == tagName && e.groupCount(tag: tagName) == 1)
+        e.renameTag(tagName, to: "Cabinets")
+        check("renaming a tag keeps its groups", tagged.tag == "Cabinets" && e.doc.tags.contains { $0.name == "Cabinets" })
+        e.setView(.top)
+        let topCamera = e.camera.position
+        e.addScene()
+        e.setTagVisible("Cabinets", false)
+        check("hiding a tag hides its groups", e.doc.isHidden(tagged))
+        e.setView(.front)
+        e.addScene()
+        check("scenes save which tags are hidden", e.doc.scenes.count == 2 && e.doc.scenes[1].hiddenTags == ["Cabinets"] && e.doc.scenes[0].hiddenTags.isEmpty)
+        e.goToScene(0)
+        check("going to a scene restores its camera and tags", (e.camera.position - topCamera).length < 1e-6 && !e.doc.isHidden(tagged))
+        e.nextScene(1)
+        check("Next Scene steps through the scenes", e.activeScene == 1 && e.doc.isHidden(tagged))
+        if let data = try? e.doc.data(), let again = try? WBDocument(data: data) {
+            check("tags and scenes survive save and reopen", again.tags.map(\.name) == ["Cabinets"] && again.scenes.count == 2
+                && again.root.all.contains { $0.tag == "Cabinets" })
+        }
+        e.deleteTag("Cabinets")
+        check("deleting a tag untags its groups", tagged.tag.isEmpty && !e.doc.isHidden(tagged) && e.doc.scenes.allSatisfy { $0.hiddenTags.isEmpty })
+
         // drawing with the real tools in an empty model
         let blank = Editor(document: ModelDocument(model: WBDocument()))
         let um2 = UndoManager()

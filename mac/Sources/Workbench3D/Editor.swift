@@ -54,6 +54,8 @@ final class Editor {
     var showGrid = true
     /// Paint tool color; Option-click a face to pick its color up.
     var paintColor = "#c8a26b"
+    /// The scene last gone to, for Previous/Next Scene.
+    var activeScene: Int?
     var xray = false
     var toast: String?
     /// Bumped on every change to geometry or selection: the renderer rebuilds its buffers.
