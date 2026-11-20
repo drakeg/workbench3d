@@ -87,6 +87,26 @@ enum Snapshot {
                 window.close()
             }
 
+            if wants("cutlist") {
+                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 680), styleMask: [.titled, .closable],
+                                      backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                window.title = "Cut List"
+                window.contentView = NSHostingView(rootView: CutListView(editor: editor).themed())
+                window.center()
+                window.makeKeyAndOrderFront(nil)
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    for tab in ["parts", "layout"] {
+                        UserDefaults.standard.set(tab, forKey: "cutlist.tab")
+                        try? await Task.sleep(for: .seconds(0.8))
+                        capture(window, to: "\(dir)/window-cutlist-\(tab)-\(mode).png")
+                    }
+                }
+                UserDefaults.standard.removeObject(forKey: "cutlist.tab")
+                window.close()
+            }
+
             if wants("settings") {
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 400), styleMask: [.titled, .closable],
                                       backing: .buffered, defer: false)
