@@ -177,7 +177,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       menu: 'File',
       run: async () => {
         try {
-          const bytes = exportShopDrawing(app.doc.root, baseName());
+          const bytes = exportShopDrawing(app.doc.root, baseName(), (tag) => app.doc.isTagVisible(tag));
           await saveFile(`${baseName()}-shop-views.pdf`, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, [
             { name: 'Printable shop views', extensions: ['pdf'] },
           ]);
