@@ -40,7 +40,7 @@ jobs:
         # that can't download artifacts can still look at them.
         if: always()
         run: |
-          for f in /tmp/Workbench3D-shots/window-*.png; do
+          for f in /tmp/Workbench3D-shots/window-*.png /tmp/Workbench3D-pdf/*.png; do
             [ -f "$f" ] || continue
             sips -Z 1000 -s format jpeg -s formatOptions 70 "$f" --out "/tmp/preview.jpg" >/dev/null
             echo "PREVIEW-BEGIN $(basename "$f" .png)"

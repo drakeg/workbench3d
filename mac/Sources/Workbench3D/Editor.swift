@@ -56,6 +56,11 @@ final class Editor {
     var paintColor = "#c8a26b"
     /// The scene last gone to, for Previous/Next Scene.
     var activeScene: Int?
+    /// Where the model is saved (nil until it is), for export file names.
+    var fileURL: URL?
+    var showCutList = false
+    /// Stock the user chose per material in the Cut List, for this window.
+    var cutListChoices: [String: StockChoice] = [:]
     var xray = false
     var toast: String?
     /// Bumped on every change to geometry or selection: the renderer rebuilds its buffers.

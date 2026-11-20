@@ -109,7 +109,7 @@ extension Editor {
     func export(_ kind: ExportKind, window: NSWindow?) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [kind.type]
-        panel.nameFieldStringValue = "\(document.displayName).\(kind.ext)"
+        panel.nameFieldStringValue = "\(modelName).\(kind.ext)"
         let doc = self.doc
         let write = {
             guard let url = panel.url else { return }
@@ -127,6 +127,3 @@ extension Editor {
     }
 }
 
-extension ModelDocument {
-    var displayName: String { "Model" }
-}
