@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateStockCost, money, parseStockPrice } from '../src/core/materialCost';
+import { estimateStockCost, money, parseStockPrice, stockQuoteKey } from '../src/core/materialCost';
 
 describe('cut-list purchase estimates', () => {
   it('prices the number of whole sheets and boards, not the part board-foot volume', () => {
@@ -39,6 +39,16 @@ describe('cut-list purchase estimates', () => {
     for (const bad of ['', ' ', '-1', '1.234', '10.', '$10', '1e3', 'abc', 'Infinity', '01', '1,000']) {
       expect(parseStockPrice(bad), bad).toBeNull();
     }
+  });
+
+  it('does not apply a quote to different sheet dimensions or a board', () => {
+    const a = stockQuoteKey('Plywood|48', 'sheet', 48, 96);
+    expect(a).toBe(stockQuoteKey('Plywood|48', 'sheet', 48, 96));
+    expect(a).not.toBe(stockQuoteKey('Plywood|48', 'sheet', 48, 120));
+    expect(a).not.toBe(stockQuoteKey('Plywood|48', 'board', 48, 96));
+    expect(a).not.toBe(stockQuoteKey('Plywood|48', 'sheet', 60, 96));
+    expect(() => stockQuoteKey('Plywood|48', 'sheet', Infinity, 96)).toThrow();
+    expect(() => stockQuoteKey('Plywood|48', 'sheet', 0, 96)).toThrow();
   });
 
   it('rejects invalid source data and arithmetic overflow', () => {
