@@ -74,6 +74,35 @@ enum SelfTest {
             check("a saved model opens with the same geometry", false, "save or load threw")
         }
 
+        // cut list: the sample's parts, stock and a PDF cutting plan
+        let rows = CutList.rows(e.doc)
+        let legRow = rows.first { $0.name == "Leg" }
+        check("the cut list counts the four legs as one line", legRow?.qty == 4 && abs((legRow?.l ?? 0) - 30) < 1e-6, "\(rows.map { "\($0.qty)× \($0.name)" })")
+        check("the cut list has the top and the stretcher", rows.contains { $0.name == "Top" && abs($0.l - 48) < 1e-6 && abs($0.w - 24) < 1e-6 } && rows.contains { $0.name == "Stretcher" })
+        let groups = CutList.stockGroups(rows)
+        let layouts = groups.map { CutList.layout($0, kerf: 0.125, margin: 0, respectGrain: true) }
+        check("every part is laid out on stock", layouts.reduce(0) { $0 + $1.pieces.reduce(0) { $0 + $1.placements.count } } == rows.reduce(0) { $0 + $1.qty }
+              && layouts.allSatisfy(\.tooBig.isEmpty))
+        let pdf = CuttingPlanPDF.make(title: "Sample", rows: rows, groups: groups, layouts: layouts, kerf: 0.125, margin: 0, respectGrain: true, units: e.doc.units)
+        let pages = CGPDFDocument(CGDataProvider(data: pdf as CFData)!)?.numberOfPages ?? 0
+        check("the cutting plan is a PDF with the list and the diagrams", pdf.starts(with: Data("%PDF".utf8)) && pages >= 2, "\(pdf.count) bytes, \(pages) pages")
+        if !pdf.isEmpty { try? pdf.write(to: URL(fileURLWithPath: "/tmp/Workbench3D-selftest-cutting-plan.pdf")) }
+        // pages as pictures, for the CI log preview
+        try? FileManager.default.createDirectory(atPath: "/tmp/Workbench3D-pdf", withIntermediateDirectories: true)
+        if let doc = CGPDFDocument(CGDataProvider(data: pdf as CFData)!) {
+            for n in 1...min(2, doc.numberOfPages) {
+                guard let page = doc.page(at: n) else { continue }
+                let r = page.getBoxRect(.mediaBox)
+                guard let ctx = CGContext(data: nil, width: Int(r.width * 1.5), height: Int(r.height * 1.5), bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { continue }
+                ctx.setFillColor(.white)
+                ctx.fill(CGRect(x: 0, y: 0, width: r.width * 1.5, height: r.height * 1.5))
+                ctx.scaleBy(x: 1.5, y: 1.5)
+                ctx.drawPDFPage(page)
+                if let img = ctx.makeImage() { Snapshot.writePNG(img, to: "/tmp/Workbench3D-pdf/pdf-page\(n).png") }
+            }
+        }
+
         // tags and scenes (no undo manager: these checks don't group undo steps)
         e.undoManager = nil
         check("the sample model has tags and scenes", e.doc.tags.count == 3 && e.doc.scenes.count == 2)
