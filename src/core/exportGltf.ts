@@ -1,4 +1,4 @@
-import { Color, Vector3 } from 'three';
+import { Color } from 'three';
 import { Group } from './document';
 
 const METERS_PER_INCH = 0.0254;
