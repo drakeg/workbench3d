@@ -223,6 +223,31 @@ final class Renderer: NSObject, MTKViewDelegate {
                 }
             }
         }
+        // Persistent dimensions use the same .wb3d coordinates as the web app.
+        // Draw model-space extension lines, the offset measuring line and end ticks;
+        // their length labels are overlaid in SwiftUI's DimensionLabels.
+        for dimension in doc.dimensions {
+            guard dimension.a.count == 3, dimension.b.count == 3, dimension.offset.count == 3 else { continue }
+            let values = dimension.a + dimension.b + dimension.offset
+            guard values.allSatisfy(\\.isFinite) else { continue }
+            let a = V3(dimension.a[0], dimension.a[1], dimension.a[2])
+            let b = V3(dimension.b[0], dimension.b[1], dimension.b[2])
+            let o = V3(dimension.offset[0], dimension.offset[1], dimension.offset[2])
+            let axis = b - a
+            guard axis.lengthSquared > 1e-10 else { continue }
+            let u = axis.normalized
+            let side = o.lengthSquared > 1e-10 ? o.normalized : e.camera.up
+            let tick = (u.cross(side).lengthSquared > 1e-10 ? u.cross(side).normalized : e.camera.up) * 0.32
+            let color = Palette3D.selection
+            func line(_ p: V3, _ q: V3, _ width: Float = 1.2) {
+                edges.append(LineSeg(a: f4(p), b: f4(q), color: color, params: SIMD4(width, 2e-5, 0, 0)))
+            }
+            line(a, a + o)
+            line(b, b + o)
+            line(a + o, b + o, 1.8)
+            line(a + o - tick, a + o + tick)
+            line(b + o - tick, b + o + tick)
+        }
         faceVerts = faces
         edgeSegs = edges
     }
