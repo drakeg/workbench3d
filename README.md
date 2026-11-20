@@ -11,6 +11,7 @@
   <a href="https://threejs.org/"><img alt="Three.js" src="https://img.shields.io/badge/Three.js-000000?logo=threedotjs&logoColor=white"></a>
   <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white"></a>
   <a href="https://tauri.app/"><img alt="Tauri" src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=white"></a>
+  <a href="compose.yml"><img alt="Docker Compose" src="https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white"></a>
 </p>
 <p align="center">
   <a href="https://github.com/drakeg/workbench3d/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/drakeg/workbench3d/actions/workflows/ci.yml/badge.svg"></a>
@@ -73,6 +74,15 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
+**LAN testing with Docker Compose (browser build only):**
+```bash
+cp .env.example .env
+docker compose up -d --build
+# Open http://localhost:8087 or http://<host-LAN-IP>:8087 from a trusted device
+docker compose down
+```
+`WB3D_PORT` and `WB3D_BIND_ADDRESS` are configurable in `.env`. The app is unauthenticated; do not expose the port publicly. Projects are saved locally in the browser and as exported `.wb3d` files, not in a server database.
+
 Desktop app (needs [Rust](https://rustup.rs) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)):
 
 ```bash
@@ -104,7 +114,7 @@ See **[docs/ADDONS.md](docs/ADDONS.md)** and the example [`examples/addons/cabin
 
 Current work is tracked in the [planned sprints](docs/SPRINTS.md) and [prioritized backlog](docs/BACKLOG.md). See the [Agile workflow](docs/AGILE.md) and [agent instructions](AGENTS.md) for implementation and review conventions.
 
-For versioning, release timing, platform checks, and recovery procedures, see [RELEASES.md](RELEASES.md).
+For versioning, release timing, platform checks, and recovery procedures, see [RELEASES.md](RELEASES.md). For vulnerability handling, see [SECURITY.md](SECURITY.md); for the first paying-customer hypothesis, see [docs/COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md).
 
 ## Contributing
 
