@@ -6,12 +6,16 @@ import { copySelection, hasClip, paste } from './clipboard';
 import { settings } from './settings';
 import { FileTarget, openBinaryFile, openFile, saveFile, store } from './platform';
 import { importSkpModel, parseSkpFile } from '../core/importSkp';
+import { importSTL } from '../core/importStl';
 import { dialog, form } from '../ui/dialogs';
 import { connected } from '../tools/select';
 import { Group } from '../core/document';
 import { AddOnManager } from '../plugins/api';
 
-const IMPORT_FILTER = [{ name: 'SketchUp model', extensions: ['skp'] }];
+const IMPORT_FILTER = [
+  { name: 'SketchUp model', extensions: ['skp'] },
+  { name: 'STL 3D mesh', extensions: ['stl'] },
+];
 const MODEL_FILTER = [{ name: 'Workbench3D model', extensions: ['wb3d'] }];
 export const AUTOSAVE_KEY = 'workbench3d.autosave';
 const RECENT_KEY = 'workbench3d.recent';
@@ -688,8 +692,36 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
 
   // Import a SketchUp file into the open model, as one group, in the group being edited.
   app.importFile = async (name: string, bytes: ArrayBuffer) => {
+    if (/\.stl$/i.test(name)) {
+      const choice = await form(
+        'Import STL',
+        [{ name: 'unit', label: 'STL coordinates are in', type: 'select', value: 'mm', options: [
+          { value: 'mm', label: 'Millimetres (most STL files)' },
+          { value: 'in', label: 'Inches' },
+        ] }],
+        app.doc.units,
+        'Import',
+      );
+      if (!choice) return;
+      try {
+        const parsed = importSTL(bytes, choice.unit as 'mm' | 'in');
+        const base = name.replace(/\.stl$/i, '');
+        const group = app.doc.transact(`Import ${base}`, () => {
+          const group = app.doc.newGroup(base);
+          group.mesh = parsed.mesh;
+          app.context.add(group);
+          return group;
+        });
+        app.setSelection({ groups: [group.id] });
+        app.vp.zoomExtents(app.modelBounds());
+        app.toast(`Imported ${name}: ${parsed.triangles} triangles${parsed.skipped ? ` (${parsed.skipped} degenerate skipped)` : ''}. STL units are not embedded in the file.`);
+      } catch (e) {
+        app.toast(`Couldn't import ${name}: ${(e as Error).message ?? e}`, 'error');
+      }
+      return;
+    }
     if (!/\.skp$/i.test(name)) {
-      app.toast(`Workbench3D can import SketchUp files (.skp). ${name} isn't one.`, 'error');
+      app.toast(`Workbench3D imports SketchUp (.skp) and STL (.stl) files. ${name} isn't a supported format.`, 'error');
       return;
     }
     app.toast(`Importing ${name}…`);
