@@ -1,5 +1,6 @@
 import { exportOBJ, exportSTL } from '../core/export';
 import { exportGLB, exportGLTF } from '../core/exportGltf';
+import { exportShopDrawing } from '../core/shopDrawing';
 import { App, isMac } from './app';
 import { isDesktopApp, isWindows } from './os';
 import { copySelection, hasClip, paste } from './clipboard';
@@ -168,6 +169,21 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       menu: 'File',
       run: async () => {
         await saveFile(`${baseName()}.gltf`, exportGLTF(app.doc.root), [{ name: 'glTF JSON', extensions: ['gltf'] }]);
+      },
+    },
+    {
+      id: 'file.exportDrawing',
+      label: 'Export Shop Views (PDF)…',
+      menu: 'File',
+      run: async () => {
+        try {
+          const bytes = exportShopDrawing(app.doc.root, baseName());
+          await saveFile(`${baseName()}-shop-views.pdf`, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, [
+            { name: 'Printable shop views', extensions: ['pdf'] },
+          ]);
+        } catch (e) {
+          app.toast(`Couldn't export shop views: ${(e as Error).message}`, 'error');
+        }
       },
     },
     {
