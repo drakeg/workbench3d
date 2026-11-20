@@ -4,8 +4,8 @@
 
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
 |---|---|---|---|---|
-| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013 | In progress (WB-001/WB-008 merged; badge checks in review) |
-| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Proposed |
+| 01 — Reliability | Nov 19–Dec 2, 2026 | Harden measurements and file safety | WB-001, WB-008, WB-013, WB-014, WB-015 | Maintenance: badge PR merged; Docker/standards in review |
+| 02 — Import/export | Dec 3–16, 2026 | Make external 3D models easier to exchange | WB-002, WB-003 | Early implementation — [PR #35](https://github.com/drakeg/workbench3d/pull/35) and [PR #36](https://github.com/drakeg/workbench3d/pull/36) in review |
 | 03 — Shop output | Dec 17–30, 2026 | Produce useful drawings and material budgets | WB-004, WB-005 | Proposed |
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
@@ -15,7 +15,9 @@
 **Objective:** prevent avoidable invalid dimensions and protect existing model files.
 - WB-001 (2 pts): strict measurement parsing. **Accept:** malformed metric/imperial strings and fractions with zero denominators return null; negative mixed dimensions resolve correctly; focused automated tests. **Current:** Done — [PR #29](https://github.com/drakeg/workbench3d/pull/29) merged; CI passed.
 - WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** Done — [PR #32](https://github.com/drakeg/workbench3d/pull/32) merged.
-- WB-013 (2 pts): README badges and CI validation. **Accept:** only verified stack/workflow/deployment badges, dynamic GitHub metadata, documented maintenance rules and CI validation. **Current:** In Review. This is routine sprint reliability/documentation maintenance.
+- WB-013 (2 pts): README badges and CI validation. **Accept:** only verified stack/workflow/deployment badges, dynamic GitHub metadata, documented maintenance rules and CI validation. **Current:** Done — [PR #34](https://github.com/drakeg/workbench3d/pull/34) merged; validator green.
+- WB-014 (3 pts): LAN Docker Compose browser test. **Accept:** configurable host port, static app responds from a container, CI verifies health and index response. **Current:** In Review.
+- WB-015 (2 pts): security policy, standards and SMB validation plan. **Accept:** no unverified claims; actionable reporting, pilot and release policies. **Current:** In Review.
 **Exit:** tests/CI verified; regression cases documented; completed PR URLs recorded below.
 
 ## Sprint 02 — Import/export
@@ -45,7 +47,8 @@
 ## Sprint reporting (update at every close)
 | Sprint | Delivered PRs | Tests/CI | Carryovers / blockers | Retro / next action |
 |---|---|---|---|---|
-| 01 | [PR #29](https://github.com/drakeg/workbench3d/pull/29), [PR #32](https://github.com/drakeg/workbench3d/pull/32) merged; WB-013 in review | Badge CI pending | WB-013 awaiting validation/merge | Review at close |
-| 02–06 | None yet | Not run | Proposed | Confirm capacity before starting |
+| 01 | [PR #29](https://github.com/drakeg/workbench3d/pull/29), [PR #32](https://github.com/drakeg/workbench3d/pull/32), [PR #34](https://github.com/drakeg/workbench3d/pull/34) merged | Badge CI passed; Docker CI pending | WB-014/015 in review | Verify container and prepare customer demo |
+| 02 | [PR #35](https://github.com/drakeg/workbench3d/pull/35), [PR #36](https://github.com/drakeg/workbench3d/pull/36) in review | Both PR CI passed individually | Final merge/retest pending | WB-016 reproducible cabinet demo next |
+| 03–06 | None yet | Not run | Proposed | Confirm capacity before starting |
 
 Use actual merged PR links and CI results here rather than guessed outcomes. Move unfinished work forward intentionally; urgent P0/P1 work may displace planned features.
