@@ -6,6 +6,10 @@ Long-term capabilities and rough priorities, open to discussion in issues. The a
 - ✅ Insert a reproducible six-panel plywood cabinet using the Sample Cabinet built-in add-on (demo, not a fabrication drawing)
 - [ ] Observe and validate the complete cut-list → sheet-layout → printable PDF customer workflow
 
+## Fabrication output
+- [x] Printable orthographic top/front/right PDF views with true printed 1:N scale and model envelope dimensions (wireframe reference, not manufacturing drawings)
+- [ ] Hidden-line suppression, part-level detailed dimensions, drawing layouts and tolerances
+
 ## Core modeling
 - ✅ Line, rectangle, circle, push/pull, move, rotate, tape measure, eraser, paint
 - ✅ Inference: endpoint, midpoint, on-edge, on-face, axis + arrow-key axis lock
