@@ -22,7 +22,7 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 | WB-012 | P3 | 2 | Proposed | Desktop signing/notarization plan and reproducible release validation | Signing credentials and maintainer approval |
 
 | WB-MAC-01 | P2 | 3 | In Review (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
-| WB-MAC-02 | P2 | 5 | Proposed | Native Mac app runs the JS add-ons (Lumber, Steel, Cut List) through JavaScriptCore | Add-on API |
+| WB-MAC-02 | P1 | 5 | In Progress (PR #43) | Native Mac Cut List for the SMB cabinet workflow: parts, sheet/board layout with kerf, trim and grain, PDF cutting plan and CSV (re-scoped from running the HTML add-ons, which need a browser) | Add-on API |
 | WB-MAC-03 | P2 | 5 | Proposed | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.
