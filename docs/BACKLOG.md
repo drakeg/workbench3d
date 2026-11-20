@@ -23,6 +23,6 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 
 | WB-MAC-01 | P2 | 3 | Done (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
 | WB-MAC-02 | P1 | 5 | Done (PR #43) | Native Mac Cut List for the SMB cabinet workflow: parts, sheet/board layout with kerf, trim and grain, PDF cutting plan and CSV (re-scoped from running the HTML add-ons, which need a browser) | Add-on API |
-| WB-MAC-03 | P2 | 5 | In Review (PR #42: Polygon and Scale) | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
+| WB-MAC-03 | P2 | 5 | In progress (Polygon/Scale merged #42; Dimension in review) | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.
