@@ -45,7 +45,8 @@ Long-term capabilities and rough priorities, open to discussion in issues. The a
 - [ ] glTF/GLB export, DXF export (CNC/laser), SVG of faces
 - ✅ SketchUp `.skp` import (2013 and later): groups, components, colours, tags, scenes, guides
 - [ ] SketchUp import: textures, soft/smooth edges, text and dimensions
-- [ ] STL/OBJ import
+- ✅ STL import (binary and ASCII; user-specified units)
+- [ ] OBJ import
 - [ ] 3MF export for 3D printing
 
 ## App
