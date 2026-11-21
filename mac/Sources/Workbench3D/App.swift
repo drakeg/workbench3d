@@ -132,6 +132,8 @@ struct ModelCommands: Commands {
                     .disabled(editor?.doc.scenes.isEmpty ?? true)
             }
             .disabled(editor == nil)
+            Button(editor?.hasActiveSection == true ? "Hide Section Cut" : "Show Section Cut") { editor?.toggleSectionCut() }
+                .disabled(editor?.doc.sections.isEmpty ?? true)
             Button("Zoom Extents") { editor?.zoomExtents() }
                 .keyboardShortcut("0")
                 .disabled(editor == nil)
@@ -149,7 +151,7 @@ struct ModelCommands: Commands {
 
         // Tools have single-key shortcuts typed in the 3D view (shown in brackets); a menu key
         // equivalent with no modifier would swallow typing in the Measurements box.
-        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon, .dimension]) }
+        CommandMenu("Draw") { toolButtons([.line, .arc, .rect, .circle, .polygon, .dimension, .section]) }
         CommandMenu("Shop") {
             Button("Cut List…") { editor?.showCutList = true }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
