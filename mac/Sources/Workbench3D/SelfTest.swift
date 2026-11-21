@@ -308,10 +308,14 @@ enum SelfTest {
         se.doc.sections.append(SectionPlane(id: se.doc.nextItemId, point: [0, 0, 3], normal: [0, 0, 1], active: true))
         se.doc.nextItemId += 1
         sectionUndo.endUndoGrouping()
+        sectionUndo.beginUndoGrouping()
         se.toggleSectionCut()
+        sectionUndo.endUndoGrouping()
         check("Section cut can be disabled without deleting the stored plane",
               se.doc.sections.count == 1 && !se.hasActiveSection)
+        sectionUndo.beginUndoGrouping()
         se.toggleSectionCut()
+        sectionUndo.endUndoGrouping()
         check("Section cut can be re-enabled", se.hasActiveSection)
 
         check("the Measurements box parses feet and inches", Units.parse("2' 6\"") == 30)
