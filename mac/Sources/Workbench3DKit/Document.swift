@@ -135,6 +135,13 @@ public struct SectionPlane: Codable, Equatable, Sendable {
     public var point: V3Array
     public var normal: V3Array
     public var active: Bool
+
+    public init(id: Int, point: V3Array, normal: V3Array, active: Bool) {
+        self.id = id
+        self.point = point
+        self.normal = normal
+        self.active = active
+    }
 }
 
 public struct ComponentDef: Codable, Equatable, Sendable {
