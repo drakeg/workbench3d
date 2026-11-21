@@ -58,6 +58,17 @@ final class Editor {
     var activeScene: Int?
     /// Where the model is saved (nil until it is), for export file names.
     var fileURL: URL?
+    var hasActiveSection: Bool { doc.sections.contains(where: \.active) }
+
+    func toggleSectionCut() {
+        guard !doc.sections.isEmpty else { return }
+        let enabled = hasActiveSection
+        perform(enabled ? "Hide Section Cut" : "Show Section Cut") {
+            for i in doc.sections.indices { doc.sections[i].active = false }
+            if !enabled { doc.sections[doc.sections.count - 1].active = true }
+        }
+    }
+
     var showCutList = false
     /// Stock the user chose per material in the Cut List, for this window.
     var cutListChoices: [String: StockChoice] = [:]
