@@ -259,6 +259,65 @@ enum SelfTest {
         check("Undo Dimension removes the annotation without altering model geometry",
               de.doc.dimensions.isEmpty && de.doc.root.mesh.faces.isEmpty)
 
+        // Section math clips both segments and triangles without modifying source geometry.
+        if let clip = SectionClip(point: [0, 0, 0], normal: [1, 0, 0]) {
+            let segment = clip.segment(V3(-2, 0, 0), V3(2, 0, 0))
+            check("Section clipping trims crossing edges at the plane",
+                  segment != nil && abs(segment!.0.x) < 1e-8 && abs(segment!.1.x - 2) < 1e-8)
+            check("Section clipping rejects wholly removed edges",
+                  clip.segment(V3(-2, 0, 0), V3(-1, 0, 0)) == nil)
+            let polygon = clip.polygon([V3(-2, 0, 0), V3(2, 0, 0), V3(2, 4, 0)])
+            check("Section clipping retains a correctly bounded face polygon",
+                  polygon.count >= 3 && polygon.allSatisfy { $0.x >= -1e-8 })
+        } else {
+            check("Section clipping constructs a valid plane", false)
+        }
+        check("Section clipping rejects zero normals and malformed coordinates",
+              SectionClip(point: [0, 0, 0], normal: [0, 0, 0]) == nil
+              && SectionClip(point: [0, 0], normal: [1, 0, 0]) == nil)
+
+        // Native Section is one undoable operation, saved in existing .wb3d.
+        let se = Editor(document: ModelDocument(model: WBDocument()))
+        let sectionUndo = UndoManager()
+        sectionUndo.groupsByEvent = false
+        se.undoManager = sectionUndo
+        se.camera.size = CGSize(width: 1000, height: 700)
+        se.camera.look(from: V3(12, 12, 150), at: V3(12, 12, 0))
+        let secFace = se.doc.root.mesh.addPolygon([V3(0, 0, 0), V3(24, 0, 0), V3(24, 24, 0), V3(0, 24, 0)])!
+        _ = se.doc.root.mesh.pushPull(secFace, -6)
+        se.setTool(.section)
+        let secPoint = se.camera.project(V3(12, 12, 6)).point
+        let sectionEvent = ToolEvent(pt: secPoint, ray: se.camera.ray(at: secPoint))
+        sectionUndo.beginUndoGrouping()
+        se.tool.mouseDown(sectionEvent, se)
+        se.submitVCB("3")
+        sectionUndo.endUndoGrouping()
+        let placed = se.doc.sections.last
+        check("Section on a face creates active plane with 3-inch typed depth",
+              placed != nil && placed!.active && abs(placed!.point[2] - 3) < 0.001)
+        if let data = try? se.doc.data(), let loaded = try? WBDocument(data: data) {
+            check("Section survives native save/reopen", loaded.sections == se.doc.sections)
+        } else { check("Section survives native save/reopen", false) }
+        check("Section clipping hides geometry behind plane",
+              SectionClip.active(in: se.doc)?.contains(V3(12, 12, 0)) == false
+              && SectionClip.active(in: se.doc)?.contains(V3(12, 12, 6)) == true)
+        sectionUndo.undo()
+        check("Undo Section leaves the underlying box intact",
+              se.doc.sections.isEmpty && se.doc.root.mesh.faces.count == 6)
+        sectionUndo.beginUndoGrouping()
+        se.doc.sections.append(SectionPlane(id: se.doc.nextItemId, point: [0, 0, 3], normal: [0, 0, 1], active: true))
+        se.doc.nextItemId += 1
+        sectionUndo.endUndoGrouping()
+        sectionUndo.beginUndoGrouping()
+        se.toggleSectionCut()
+        sectionUndo.endUndoGrouping()
+        check("Section cut can be disabled without deleting the stored plane",
+              se.doc.sections.count == 1 && !se.hasActiveSection)
+        sectionUndo.beginUndoGrouping()
+        se.toggleSectionCut()
+        sectionUndo.endUndoGrouping()
+        check("Section cut can be re-enabled", se.hasActiveSection)
+
         check("the Measurements box parses feet and inches", Units.parse("2' 6\"") == 30)
         check("…and millimetres", abs((Units.parse("254mm") ?? 0) - 10) < 1e-9)
 

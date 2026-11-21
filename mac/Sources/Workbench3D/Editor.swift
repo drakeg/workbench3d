@@ -58,6 +58,17 @@ final class Editor {
     var activeScene: Int?
     /// Where the model is saved (nil until it is), for export file names.
     var fileURL: URL?
+    var hasActiveSection: Bool { doc.sections.contains(where: \.active) }
+
+    func toggleSectionCut() {
+        guard !doc.sections.isEmpty else { return }
+        let enabled = hasActiveSection
+        perform(enabled ? "Hide Section Cut" : "Show Section Cut") {
+            for i in doc.sections.indices { doc.sections[i].active = false }
+            if !enabled { doc.sections[doc.sections.count - 1].active = true }
+        }
+    }
+
     var showCutList = false
     /// Stock the user chose per material in the Cut List, for this window.
     var cutListChoices: [String: StockChoice] = [:]
@@ -306,7 +317,8 @@ final class Editor {
         rebuildPickIfNeeded()
         var best: FaceHit?
         for t in pick.triangles where include(t.group) {
-            if let d = ray.intersectTriangle(t.a, t.b, t.c), d < (best?.distance ?? .infinity) {
+            if let d = ray.intersectTriangle(t.a, t.b, t.c), d < (best?.distance ?? .infinity),
+               SectionClip.active(in: doc)?.contains(ray.at(d)) ?? true {
                 best = FaceHit(point: ray.at(d), group: t.group, face: t.face, normal: t.normal, distance: d)
             }
         }
@@ -325,7 +337,8 @@ final class Editor {
             if sa.behind || sb.behind { continue }
             let (d, t) = screenDistance(pt, sa, sb)
             let mid = e.a + (e.b - e.a) * t
-            if d < tolerance, d < (best?.d ?? .infinity), mid.distance(to: ray.origin) <= maxDepth { best = (d, e.key) }
+            if d < tolerance, d < (best?.d ?? .infinity), mid.distance(to: ray.origin) <= maxDepth,
+               SectionClip.active(in: doc)?.contains(mid) ?? true { best = (d, e.key) }
         }
         return best?.key
     }

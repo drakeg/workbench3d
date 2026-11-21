@@ -55,4 +55,7 @@
 Use actual merged PR links and CI results here rather than guessed outcomes. Move unfinished work forward intentionally; urgent P0/P1 work may displace planned features.
 
 ## Native Mac tool follow-through
-- WB-MAC-03: Polygon and Scale merged in [PR #42](https://github.com/drakeg/workbench3d/pull/42). Native Dimension placement and persistent measurement labels are in review; Section tool and SketchUp import still pending. Acceptance: visual labels, undo, and `.wb3d` round-trip verified in macOS CI.
+- WB-MAC-03: Polygon and Scale merged in [PR #42](https://github.com/drakeg/workbench3d/pull/42). Native Dimension placement and persistent measurement labels merged in [PR #44](https://github.com/drakeg/workbench3d/pull/44). Section-plane placement/clipping/toggle is in review; SketchUp import remains pending. Acceptance: visual labels, undo, and `.wb3d` round-trip verified in macOS CI.
+
+## Native Mac Section milestone
+- WB-MAC-03 Section increment: place a cut on a face, set exact depth, clip visible geometry, toggle the cut, save/reopen and undo without changing the model mesh. **In Review:** native Mac self-tests and workflow required; no version bump until release policy warrants it.

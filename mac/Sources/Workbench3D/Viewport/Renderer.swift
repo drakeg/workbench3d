@@ -149,6 +149,7 @@ final class Renderer: NSObject, MTKViewDelegate {
 
     private func rebuild(_ e: Editor) {
         let doc = e.doc
+        let section = SectionClip.active(in: doc)
         let ctx = e.context
         let inCtx = Set(ctx.all.map(\.id))
         let editingInside = ctx !== doc.root
@@ -172,7 +173,15 @@ final class Renderer: NSObject, MTKViewDelegate {
                 color.w = dim ? 0.25 : 1
                 let n = f4((nm * g.mesh.normal(f)).normalized, 0)
                 for (a, b, c) in g.mesh.triangulate(f) {
-                    for id in [a, b, c] { faces.append(FaceVertex(pos: f4(world[id]!), normal: n, color: color)) }
+                    let triangle = [world[a]!, world[b]!, world[c]!]
+                    let polygon = section?.polygon(triangle) ?? triangle
+                    if polygon.count >= 3 {
+                        for i in 1..<(polygon.count - 1) {
+                            for p in [polygon[0], polygon[i], polygon[i + 1]] {
+                                faces.append(FaceVertex(pos: f4(p), normal: n, color: color))
+                            }
+                        }
+                    }
                 }
             }
             let isCtx = g === ctx
@@ -197,13 +206,17 @@ final class Renderer: NSObject, MTKViewDelegate {
                     color = Palette3D.edge
                     width = 1.4
                 }
-                edges.append(LineSeg(a: f4(world[k.a]!), b: f4(world[k.b]!), color: color, params: SIMD4(width, 2e-5, 0, 0)))
+                if let visible = (section == nil ? (world[k.a]!, world[k.b]!) : section!.segment(world[k.a]!, world[k.b]!)) {
+                    edges.append(LineSeg(a: f4(visible.0), b: f4(visible.1), color: color, params: SIMD4(width, 2e-5, 0, 0)))
+                }
             }
             if isCtx {
                 for fid in e.selection.faces {
                     guard let f = g.mesh.faces[fid] else { continue }
                     for k in g.mesh.faceEdgeKeys(f) {
-                        edges.append(LineSeg(a: f4(world[k.a]!), b: f4(world[k.b]!), color: selColor, params: SIMD4(2.4, 3e-5, 0, 0)))
+                        if let visible = (section == nil ? (world[k.a]!, world[k.b]!) : section!.segment(world[k.a]!, world[k.b]!)) {
+                            edges.append(LineSeg(a: f4(visible.0), b: f4(visible.1), color: selColor, params: SIMD4(2.4, 3e-5, 0, 0)))
+                        }
                     }
                 }
             }
@@ -247,6 +260,21 @@ final class Renderer: NSObject, MTKViewDelegate {
             line(a + o, b + o, 1.8)
             line(a + o - tick, a + o + tick)
             line(b + o - tick, b + o + tick)
+        }
+        // Section-plane outline remains visible as a reference and is not baked into model geometry.
+        if let section {
+            let n = section.normal
+            let basis = abs(n.z) < 0.9 ? V3.zAxis : V3.xAxis
+            let u = n.cross(basis).normalized
+            let v = n.cross(u).normalized
+            let radius = max(12.0, min(180.0, doc.bounds.size.length * 0.6))
+            let p = section.point
+            let corners = [p - u * radius - v * radius, p + u * radius - v * radius,
+                           p + u * radius + v * radius, p - u * radius + v * radius]
+            for i in 0..<4 {
+                edges.append(LineSeg(a: f4(corners[i]), b: f4(corners[(i + 1) % 4]),
+                                     color: Palette3D.magenta, params: SIMD4(1.6, -1e-4, 0, 0)))
+            }
         }
         faceVerts = faces
         edgeSegs = edges
