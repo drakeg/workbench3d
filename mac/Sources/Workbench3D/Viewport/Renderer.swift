@@ -206,7 +206,7 @@ final class Renderer: NSObject, MTKViewDelegate {
                     color = Palette3D.edge
                     width = 1.4
                 }
-                if let visible = section?.segment(world[k.a]!, world[k.b]!) ?? (world[k.a]!, world[k.b]!) {
+                if let visible = (section == nil ? (world[k.a]!, world[k.b]!) : section!.segment(world[k.a]!, world[k.b]!)) {
                     edges.append(LineSeg(a: f4(visible.0), b: f4(visible.1), color: color, params: SIMD4(width, 2e-5, 0, 0)))
                 }
             }
@@ -214,7 +214,7 @@ final class Renderer: NSObject, MTKViewDelegate {
                 for fid in e.selection.faces {
                     guard let f = g.mesh.faces[fid] else { continue }
                     for k in g.mesh.faceEdgeKeys(f) {
-                        if let visible = section?.segment(world[k.a]!, world[k.b]!) ?? (world[k.a]!, world[k.b]!) {
+                        if let visible = (section == nil ? (world[k.a]!, world[k.b]!) : section!.segment(world[k.a]!, world[k.b]!)) {
                             edges.append(LineSeg(a: f4(visible.0), b: f4(visible.1), color: selColor, params: SIMD4(2.4, 3e-5, 0, 0)))
                         }
                     }
