@@ -10,7 +10,6 @@
 | 04 — RV planning | Dec 31, 2026–Jan 13, 2027 | Speed RV interior layouts and editable parts | WB-006 | Proposed |
 | 05 — Geometry tools | Jan 14–27, 2027 | Add path-based shaping for fabrication | WB-007, WB-010 | Proposed |
 | 06 — Workflow and interoperability | Jan 28–Feb 10, 2027 | Expand CNC export and efficient editing | WB-011, WB-009 | Proposed |
-
 | 07 — Peer-driven safety and correctness | Next ready hardening track (dates TBD) | Prevent data loss, wrong measurements, stale scenes and broken cutting plans | WB-017, WB-018, WB-019, WB-020, WB-022, WB-023 | Proposed — P1 acceptance in peer register |
 | 08 — Parts and regression coverage | After 07, overlapping work permitted | Reliable instance quantities and reproducible workflows | WB-021, WB-024, WB-033 | Proposed |
 | 09 — Material efficiency | After 08 | Reuse offcuts and produce realistic cabinet purchase estimates | WB-026, WB-027, WB-028 | Proposed |
@@ -24,7 +23,7 @@
 - WB-008 (3 pts): document serialization round-trip and bad file feedback. **Accept:** fixtures load/save without unwanted data loss, parse failures show actionable UI error, regression tests pass. **Current:** Done — [PR #32](https://github.com/drakeg/workbench3d/pull/32) merged.
 - WB-013 (2 pts): README badges and CI validation. **Accept:** only verified stack/workflow/deployment badges, dynamic GitHub metadata, documented maintenance rules and CI validation. **Current:** Done — [PR #34](https://github.com/drakeg/workbench3d/pull/34) merged; validator green.
 - WB-014 (3 pts): LAN Docker Compose browser test. **Accept:** configurable host port, static app responds from a container, CI verifies health and index response. **Current:** Done — [PR #37](https://github.com/drakeg/workbench3d/pull/37) merged.
-- WB-015 (2 pts): security policy, standards and SMB validation plan. **Accept:** no unverified claims; actionable reporting, pilot and release policies. **Current:** In Review.
+- WB-015 (2 pts): security policy, standards and SMB validation plan. **Accept:** no unverified claims; actionable reporting, pilot and release policies. **Current:** Done — [PR #37](https://github.com/drakeg/workbench3d/pull/37) merged.
 **Exit:** tests/CI verified; regression cases documented; completed PR URLs recorded below.
 
 ## Sprint 02 — Import/export
