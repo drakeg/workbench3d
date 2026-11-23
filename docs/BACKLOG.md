@@ -33,7 +33,7 @@ Source issue-by-issue provenance, eligibility and detailed acceptance criteria: 
 |---|---|---:|---|---|---|
 | WB-017 | P1 | 5 | Proposed | Protect files and recovery: unsupported future versions/fields refuse destructive save; Save/Don't Save/Cancel and desktop recovery tests | WB-008, file format |
 | WB-018 | P1 | 8 | Proposed | Associative dimensions follow edited geometry or warn when detached; stable references, undo and compatible save/reopen | WB-004, dimensions |
-| WB-019 | P1 | 3 | Proposed | Golden inch/mm/fraction fixtures agree across model, cut list, PDF and CSV; documented precision | WB-001, WB-005 |
+| WB-019 | P1 | 3 | In Review (rounding increment) | Golden inch/mm/fraction fixtures agree across model, cut list, PDF and CSV; documented precision | WB-001, WB-005 |
 | WB-020 | P1 | 5 | Proposed | Section/scene/tag visibility and selection stay consistent on edits, undo, PDF and reopen; no lost planes | WB-MAC-03, WB-004 |
 | WB-021 | P1 | 5 | Proposed | Repeated cabinet parts become named component instances; cut-list quantities, grouping and Outliner reparenting preserve transforms | WB-016, components |
 | WB-022 | P1 | 5 | Proposed | Nesting handles rectangular/L-shaped fixtures, rotations, grain, kerf/trim, utilization and clear unplaced reasons | WB-005, layout |
