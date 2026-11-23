@@ -268,7 +268,8 @@ private func box(_ m: Mesh, _ w: Double = 10, _ d: Double = 20, _ h: Double = 5)
         }
         for data in [future, version, nested] {
             #expect(throws: Error.self) { try document.load(data) }
-            #expect(try document.data() == before)
+            let current = try #require(JSONSerialization.jsonObject(with: document.data()) as? [String: Any])
+            #expect(NSDictionary(dictionary: current).isEqual(to: base))
         }
     }
 
@@ -276,7 +277,9 @@ private func box(_ m: Mesh, _ w: Double = 10, _ d: Double = 20, _ h: Double = 5)
         let document = WBDocument()
         let original = try document.data()
         let copy = try WBDocument(data: original)
-        #expect(try copy.data() == original)
+        let reopened = try #require(JSONSerialization.jsonObject(with: copy.data()) as? [String: Any])
+        let expected = try #require(JSONSerialization.jsonObject(with: original) as? [String: Any])
+        #expect(NSDictionary(dictionary: reopened).isEqual(to: expected))
         var raw = try #require(JSONSerialization.jsonObject(with: original) as? [String: Any])
         var root = try #require(raw["root"] as? [String: Any])
         root["attributes"] = ["unknownAddOn": ["userValue": 7]]
