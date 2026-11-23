@@ -49,6 +49,14 @@ private func box(_ m: Mesh, _ w: Double = 10, _ d: Double = 20, _ h: Double = 5)
         #expect(Units.parse("") == nil)
     }
 
+    @Test func metricHalfStepRoundingMatchesWeb() {
+        let setting = UnitSettings(system: .metric, mmDecimals: 2)
+        #expect(Units.format(0.125, units: setting) == "3.18 mm")
+        #expect(Units.format(-0.125, units: setting) == "-3.18 mm")
+        #expect(Units.format(0.1875, units: setting) == "4.76 mm")
+        #expect(Units.format(0.125, units: UnitSettings(system: .metric, mmDecimals: 3)) == "3.175 mm")
+    }
+
     @Test func formats() {
         #expect(Units.format(1.5) == "1 1/2\"")
         #expect(Units.format(0.75) == "3/4\"")

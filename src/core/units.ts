@@ -54,7 +54,8 @@ export function parseLength(text: string, units: UnitSettings = defaultUnits): n
     const v = parseFloat(metric[1]);
     if (isNaN(v)) return null;
     const mm = metric[2] === 'mm' ? v : metric[2] === 'cm' ? v * 10 : v * 1000;
-    return mm / MM_PER_INCH;
+    const inches = mm / MM_PER_INCH;
+    return Number.isFinite(inches) ? inches : null;
   }
 
   // feet and optional inches: 2'  2' 6"  2'6-1/2"
@@ -70,15 +71,20 @@ export function parseLength(text: string, units: UnitSettings = defaultUnits): n
       inches = v;
     }
     const sign = f < 0 || feet[1].startsWith('-') ? -1 : 1;
-    return sign * (Math.abs(f) * 12 + inches);
+    const total = sign * (Math.abs(f) * 12 + inches);
+    return Number.isFinite(total) ? total : null;
   }
 
   const inch = s.match(/^(.*?)\s*("|in)$/);
-  if (inch) return parseNumberish(inch[1]);
+  if (inch) {
+    const value = parseNumberish(inch[1]);
+    return value !== null && Number.isFinite(value) ? value : null;
+  }
 
   const bare = parseNumberish(s);
   if (bare === null) return null;
-  return units.system === 'metric' ? bare / MM_PER_INCH : bare;
+  const inches = units.system === 'metric' ? bare / MM_PER_INCH : bare;
+  return Number.isFinite(inches) ? inches : null;
 }
 
 function gcd(a: number, b: number): number {
@@ -111,8 +117,25 @@ export function formatLength(inches: number, units: UnitSettings = defaultUnits)
   return `${approx}${sign}${inchStr}"`;
 }
 
+/**
+ * Decimal display rounding uses half-away-from-zero for values on a decimal
+ * boundary (e.g. 1/8 in = 3.175 mm -> 3.18 mm at two decimals).
+ * Binary floating-point arithmetic can put an exact midpoint just below its
+ * ideal value; allow only a few ULPs of tolerance around that boundary.
+ */
+export function roundDisplayDecimal(value: number, decimals: number): number {
+  if (!Number.isFinite(value) || !Number.isInteger(decimals) || decimals < 0 || decimals > 10) {
+    throw new Error('Invalid display rounding parameters');
+  }
+  const factor = 10 ** decimals;
+  const scaled = Math.abs(value) * factor;
+  const tolerance = Number.EPSILON * Math.max(1, scaled) * 4;
+  const rounded = Math.round(scaled + tolerance) / factor;
+  return value < 0 ? -rounded : rounded;
+}
+
 function trim(v: number, decimals: number): string {
-  return parseFloat(v.toFixed(decimals)).toString();
+  return String(roundDisplayDecimal(v, decimals));
 }
 
 /** Format an area given in square inches. */
@@ -131,12 +154,14 @@ export function formatArea(sqIn: number, units: UnitSettings = defaultUnits): st
  * Returns null if any item fails to parse.
  */
 export function parseLengthList(text: string, units: UnitSettings = defaultUnits): number[] | null {
-  const parts = text.split(/[,;]|\s+x\s+|(?<=['"\d])x(?=[\d.-])/i).map((p) => p.trim()).filter(Boolean);
-  if (!parts.length) return null;
+  if (!text.trim()) return null;
+  const parts = text.split(/[,;]|\s+x\s+|(?<=['"\d])x(?=[\d.-])/i).map((p) => p.trim());
+  // Empty entries are invalid: silently ignoring one can create the wrong geometry.
+  if (parts.some((p) => !p)) return null;
   const out: number[] = [];
   for (const p of parts) {
     const v = parseLength(p, units);
-    if (v === null) return null;
+    if (v === null || !Number.isFinite(v)) return null;
     out.push(v);
   }
   return out;

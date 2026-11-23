@@ -91,7 +91,14 @@ public enum Units {
     private static func gcd(_ a: Int, _ b: Int) -> Int { b == 0 ? a : gcd(b, a % b) }
 
     private static func trimmed(_ v: Double, _ decimals: Int) -> String {
-        var s = String(format: "%.\(decimals)f", v)
+        // Match the web display convention: decimal half-steps round away from
+        // zero even if floating-point conversion leaves a midpoint a few ULPs low.
+        let factor = pow(10, Double(decimals))
+        let scaled = abs(v) * factor
+        let tolerance = Double.ulpOfOne * max(1, scaled) * 4
+        let rounded = (scaled + tolerance).rounded(.toNearestOrAwayFromZero) / factor
+        let signed = v < 0 ? -rounded : rounded
+        var s = String(format: "%.\(decimals)f", signed)
         if s.contains(".") {
             while s.hasSuffix("0") { s.removeLast() }
             if s.hasSuffix(".") { s.removeLast() }
