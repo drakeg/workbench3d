@@ -111,8 +111,25 @@ export function formatLength(inches: number, units: UnitSettings = defaultUnits)
   return `${approx}${sign}${inchStr}"`;
 }
 
+/**
+ * Decimal display rounding uses half-away-from-zero for values on a decimal
+ * boundary (e.g. 1/8 in = 3.175 mm -> 3.18 mm at two decimals).
+ * Binary floating-point arithmetic can put an exact midpoint just below its
+ * ideal value; allow only a few ULPs of tolerance around that boundary.
+ */
+export function roundDisplayDecimal(value: number, decimals: number): number {
+  if (!Number.isFinite(value) || !Number.isInteger(decimals) || decimals < 0 || decimals > 10) {
+    throw new Error('Invalid display rounding parameters');
+  }
+  const factor = 10 ** decimals;
+  const scaled = Math.abs(value) * factor;
+  const tolerance = Number.EPSILON * Math.max(1, scaled) * 4;
+  const rounded = Math.round(scaled + tolerance) / factor;
+  return value < 0 ? -rounded : rounded;
+}
+
 function trim(v: number, decimals: number): string {
-  return parseFloat(v.toFixed(decimals)).toString();
+  return String(roundDisplayDecimal(v, decimals));
 }
 
 /** Format an area given in square inches. */
