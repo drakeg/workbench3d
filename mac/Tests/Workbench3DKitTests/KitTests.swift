@@ -247,3 +247,46 @@ private func box(_ m: Mesh, _ w: Double = 10, _ d: Double = 20, _ h: Double = 5)
         #expect(Export.triangles(again).count == 112)
     }
 }
+
+@Suite struct ProjectCompatibilityTests {
+    @Test func refusesNewerFieldsAndVersionsWithoutReplacingModel() throws {
+        let document = WBDocument()
+        document.root.name = "Existing work"
+        let before = try document.data()
+        let base = try #require(JSONSerialization.jsonObject(with: before) as? [String: Any])
+        func candidate(_ mutate: (inout [String: Any]) -> Void) throws -> Data {
+            var raw = base
+            mutate(&raw)
+            return try JSONSerialization.data(withJSONObject: raw)
+        }
+        let future = try candidate { $0["futureSheets"] = [["id": 8]] }
+        let version = try candidate { $0["version"] = 2 }
+        let nested = try candidate { root in
+            var group = root["root"] as! [String: Any]
+            group["unfamiliarGeometry"] = true
+            root["root"] = group
+        }
+        for data in [future, version, nested] {
+            #expect(throws: Error.self) { try document.load(data) }
+            let current = try #require(JSONSerialization.jsonObject(with: document.data()) as? [String: Any])
+            #expect(NSDictionary(dictionary: current).isEqual(to: base))
+        }
+    }
+
+    @Test func supportsCurrentDocumentsAndFreeFormGroupAttributes() throws {
+        let document = WBDocument()
+        let original = try document.data()
+        let copy = try WBDocument(data: original)
+        let reopened = try #require(JSONSerialization.jsonObject(with: copy.data()) as? [String: Any])
+        let expected = try #require(JSONSerialization.jsonObject(with: original) as? [String: Any])
+        #expect(NSDictionary(dictionary: reopened).isEqual(to: expected))
+        var raw = try #require(JSONSerialization.jsonObject(with: original) as? [String: Any])
+        var root = try #require(raw["root"] as? [String: Any])
+        root["attributes"] = ["unknownAddOn": ["userValue": 7]]
+        raw["root"] = root
+        let custom = try JSONSerialization.data(withJSONObject: raw)
+        let loaded = try WBDocument(data: custom)
+        #expect(try loaded.data().count > original.count)
+    }
+}
+

@@ -24,6 +24,36 @@ describe('WorkbenchDocument project safety', () => {
     expect(restored.component(component.id)?.name).toBe('Shelf');
   });
 
+  it('refuses unknown structural fields at every supported level without losing open work', () => {
+    const doc = new WorkbenchDocument();
+    doc.transact('Keep', () => doc.root.add(doc.newGroup('Saved locally')));
+    const before = doc.serialize();
+    const shape = doc.toJSON();
+    const examples = [
+      { ...shape, futureSheetLayouts: [{ id: 1 }] },
+      { ...shape, units: { ...shape.units, futurePrecision: 0.01 } },
+      { ...shape, root: { ...shape.root, futureChild: true } },
+      { ...shape, root: { ...shape.root, mesh: { ...shape.root.mesh, futureFaces: [] } } },
+      { ...shape, dimensions: [{ id: 7, a: [0, 0, 0], b: [1, 0, 0], offset: [0, 1, 0], futureAttachment: 5 }] },
+      { ...shape, scenes: [{ name: 'A', camera: { position: [0, 0, 10], target: [0, 0, 0], perspective: true, futureRoll: 5 }, hiddenTags: [] }] },
+    ];
+    for (const source of examples) {
+      expect(() => doc.load(JSON.stringify(source))).toThrow(/newer version/);
+      expect(doc.serialize()).toBe(before);
+      expect(doc.dirty).toBe(true);
+      expect(doc.canUndo()).toBe(true);
+    }
+  });
+
+  it('continues to support add-on attributes and valid version-1 round trips', () => {
+    const doc = new WorkbenchDocument();
+    doc.root.attributes = { extension: { experimental: { revision: 3 } }, tags: ['custom'] };
+    const original = doc.toJSON();
+    const reopened = new WorkbenchDocument();
+    reopened.load(JSON.stringify(original));
+    expect(reopened.toJSON()).toEqual(original);
+  });
+
   it('rejects invalid files without changing a dirty document or its undo history', () => {
     const doc = new WorkbenchDocument();
     doc.transact('Add part', () => doc.root.add(doc.newGroup('Existing work')));

@@ -165,6 +165,63 @@ struct DocumentJSON: Codable {
     var nextItemId: Int?
 }
 
+/// Reject structural fields written by newer editors rather than silently
+/// discarding them during Codable decode/encode. Free-form group attributes
+/// remain supported; this guard does not change the on-disk schema.
+private enum FileCompatibility {
+    private static let fields: [String: Set<String>] = [
+        "document": ["format", "version", "units", "nextGroupId", "root", "guides", "dimensions", "tags", "scenes", "sections", "components", "nextItemId"],
+        "group": ["id", "name", "matrix", "mesh", "children", "hidden", "tag", "componentId", "attributes"],
+        "mesh": ["nextId", "verts", "faces", "lines"],
+        "face": ["id", "outer", "holes", "color"],
+        "units": ["system", "fraction", "mmDecimals"],
+        "guide": ["id", "point", "dir"],
+        "dimension": ["id", "a", "b", "offset"],
+        "tag": ["name", "visible", "color"],
+        "scene": ["name", "camera", "hiddenTags", "activeSection"],
+        "camera": ["position", "target", "perspective"],
+        "section": ["id", "point", "normal", "active"],
+        "component": ["id", "name", "description"]
+    ]
+
+    static func verify(_ data: Data) throws {
+        guard let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        try check(raw, "document", "$")
+    }
+
+    private static func check(_ object: [String: Any], _ kind: String, _ path: String) throws {
+        let extras = Set(object.keys).subtracting(fields[kind] ?? []).sorted()
+        if !extras.isEmpty {
+            throw NSError(domain: "Workbench3D.FileCompatibility", code: 1,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Unsupported project data at \(path): \(extras.joined(separator: ", ")). " +
+                    "This model may have been saved by a newer Workbench3D. Update to edit it; the original was not changed."])
+        }
+        func child(_ key: String, _ type: String) throws {
+            if let node = object[key] as? [String: Any] { try check(node, type, "\(path).\(key)") }
+        }
+        func items(_ key: String, _ type: String) throws {
+            if let nodes = object[key] as? [[String: Any]] {
+                for (index, node) in nodes.enumerated() { try check(node, type, "\(path).\(key)[\(index)]") }
+            }
+        }
+        switch kind {
+        case "document":
+            try child("root", "group")
+            try child("units", "units")
+            for (key, type) in [("guides", "guide"), ("dimensions", "dimension"),
+                ("tags", "tag"), ("scenes", "scene"), ("sections", "section"),
+                ("components", "component")] { try items(key, type) }
+        case "group":
+            try child("mesh", "mesh")
+            try items("children", "group")
+        case "mesh": try items("faces", "face")
+        case "scene": try child("camera", "camera")
+        default: break
+        }
+    }
+}
+
 func round6(_ x: Double) -> Double { (x * 1e6).rounded() / 1e6 }
 
 extension Mesh {
@@ -324,8 +381,13 @@ public final class WBDocument {
     }
 
     public func load(_ data: Data) throws {
+        try FileCompatibility.verify(data)
         let j = try JSONDecoder().decode(DocumentJSON.self, from: data)
         guard j.format == "workbench3d" else { throw DocumentError.notWorkbench3D }
+        guard j.version == 1 else {
+            throw NSError(domain: "Workbench3D.FileCompatibility", code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Unsupported Workbench3D document version \(j.version). Update to edit it."])
+        }
         root = Group(json: j.root)
         units = j.units
         nextGroupId = j.nextGroupId

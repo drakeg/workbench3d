@@ -43,20 +43,33 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
     app.emit('change');
   };
 
-  const confirmDiscard = async () => {
-    if (!app.doc.dirty) return true;
-    const r = await dialog('Unsaved changes', '<p>Your model has unsaved changes. Discard them?</p>', ['Cancel', 'Discard']);
-    return r === 'Discard';
-  };
-
-  const save = async (as: boolean) => {
+  const save = async (as: boolean): Promise<boolean> => {
     const t = await saveFile(`${baseName()}.wb3d`, JSON.stringify(app.doc.toJSON(), null, 1), MODEL_FILTER, as ? null : target);
-    if (!t) return;
+    if (!t) return false;
     target = t.handle || t.path ? t : null;
     app.doc.dirty = false;
     setName(t.name);
     if (t.path) addRecent(t.name, t.path);
+    store.remove(AUTOSAVE_KEY);
     app.toast(`Saved ${t.name}`);
+    return true;
+  };
+
+  const confirmDiscard = async (): Promise<boolean> => {
+    if (!app.doc.dirty) return true;
+    const choice = await dialog(
+      'Unsaved changes',
+      '<p>Save the current model before continuing?</p>',
+      ['Cancel', "Don't Save", 'Save'],
+    );
+    if (choice === "Don't Save") return true;
+    if (choice !== 'Save') return false;
+    try {
+      return await save(false);
+    } catch (error) {
+      app.toast(`Couldn't save model: ${(error as Error).message}. Your work is still open.`, 'error');
+      return false;
+    }
   };
 
   const cmds: Parameters<App['registerCommand']>[0][] = [
@@ -109,9 +122,9 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         return items;
       },
     },
-    { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: () => save(false) },
+    { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: async () => { await save(false); } },
     // Mac apps duplicate a document rather than "Save As"
-    { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: () => save(true) },
+    { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: async () => { await save(true); } },
     {
       id: 'file.import',
       label: 'Import…',
@@ -758,7 +771,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       app.toast(`Couldn't import ${name}: ${(e as Error).message ?? e}`, 'error');
     }
   };
-  app.saveCurrent = () => save(false);
+  app.saveCurrent = async () => { await save(false); };
 
   function hasGeometrySelection(): boolean {
     const s = app.selection;
@@ -790,7 +803,10 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
   let timer = 0;
   app.on('change', () => {
     clearTimeout(timer);
-    timer = window.setTimeout(() => store.set(AUTOSAVE_KEY, JSON.stringify({ name: app.fileName, doc: app.doc.toJSON() })), 800);
+    if (!app.doc.dirty) return;
+    timer = window.setTimeout(() => {
+      if (app.doc.dirty) store.set(AUTOSAVE_KEY, JSON.stringify({ name: app.fileName, doc: app.doc.toJSON() }));
+    }, 800);
   });
 }
 

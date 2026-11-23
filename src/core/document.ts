@@ -1,6 +1,7 @@
 import { Box3, Matrix4, Quaternion, Vector3 } from 'three';
 import { Mesh, MeshJSON } from './mesh';
 import { UnitSettings, defaultUnits } from './units';
+import { guardSupportedProjectFields } from './fileCompatibility';
 
 export interface GroupJSON {
   id: number;
@@ -295,6 +296,7 @@ export class WorkbenchDocument {
     }
     if (!j || typeof j !== 'object' || j.format !== 'workbench3d') throw new Error('Not a Workbench3D file');
     if (j.version !== 1) throw new Error(`Unsupported Workbench3D file version: ${String(j.version)}`);
+    guardSupportedProjectFields(j);
     if (!j.root || typeof j.root !== 'object' || !Array.isArray(j.root.children) ||
         !Array.isArray(j.root.matrix) || j.root.matrix.length !== 16 ||
         !j.root.mesh || !Array.isArray(j.root.mesh.verts) ||
