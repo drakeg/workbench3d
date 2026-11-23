@@ -122,9 +122,9 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
         return items;
       },
     },
-    { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: () => save(false) },
+    { id: 'file.save', label: 'Save', menu: 'File', shortcut: 'Mod+S', run: async () => { await save(false); } },
     // Mac apps duplicate a document rather than "Save As"
-    { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: () => save(true) },
+    { id: 'file.saveAs', label: isMac ? 'Duplicate…' : 'Save As…', menu: 'File', shortcut: 'Mod+Shift+S', run: async () => { await save(true); } },
     {
       id: 'file.import',
       label: 'Import…',
@@ -771,7 +771,7 @@ export function registerCommands(app: App, addOns: AddOnManager): void {
       app.toast(`Couldn't import ${name}: ${(e as Error).message ?? e}`, 'error');
     }
   };
-  app.saveCurrent = () => save(false);
+  app.saveCurrent = async () => { await save(false); };
 
   function hasGeometrySelection(): boolean {
     const s = app.selection;
