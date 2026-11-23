@@ -628,6 +628,7 @@ check('cabinet material estimate uses whole sheet price', pricedEstimate.include
 await page.screenshot({ path: `${out}/cabinet-cost-estimate.png` });
 await page.screenshot({ path: `${out}/cabinet-demo.png` });
 
+await page.keyboard.press('Escape'); // close the Cut List before testing the unsaved-file prompt
 // WB-017: dirty model must not be discarded unless the user explicitly chooses it.
 await page.evaluate(() => { window.workbench.doc.dirty = true; window.workbench.runCommand('file.new'); });
 await page.waitForSelector('.modal');
