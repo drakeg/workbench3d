@@ -23,6 +23,35 @@ This is the actionable companion to [ROADMAP.md](../ROADMAP.md) and [SPRINTS.md]
 
 | WB-MAC-01 | P2 | 3 | Done (PR #39) | Native Mac app: Tags and Scenes panels (show/hide, rename, delete, tag selection, save/update/step through scenes), with self-test checks and snapshots | Mac milestone 1 |
 | WB-MAC-02 | P1 | 5 | Done (PR #43) | Native Mac Cut List for the SMB cabinet workflow: parts, sheet/board layout with kerf, trim and grain, PDF cutting plan and CSV (re-scoped from running the HTML add-ons, which need a browser) | Add-on API |
-| WB-MAC-03 | P2 | 5 | In progress (Polygon/Scale #42 and Dimension #44 merged; Section in review) | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
+| WB-MAC-03 | P2 | 5 | In progress (Polygon/Scale #42 and Dimension #44 merged; Section merged #45; native SKP import pending) | Native Mac app: remaining tools (Polygon, Scale, Dimension, Section) and SketchUp .skp import | Mac milestone 1 |
+
+## Peer issue-driven backlog (independent implementations)
+
+Source issue-by-issue provenance, eligibility and detailed acceptance criteria: [PEER_ISSUE_RESEARCH.md](PEER_ISSUE_RESEARCH.md). These are **Workbench3D-specific** proposals, not upstream code transfers or confirmed local defects. Status stays Proposed until work is verified. P1 correctness is the next active hardening track; it does not stop other ready sprints or commercialization exploration.
+
+| ID | Priority | Points | Status | User outcome / acceptance | Dependency |
+|---|---|---:|---|---|---|
+| WB-017 | P1 | 5 | Proposed | Protect files and recovery: unsupported future versions/fields refuse destructive save; Save/Don't Save/Cancel and desktop recovery tests | WB-008, file format |
+| WB-018 | P1 | 8 | Proposed | Associative dimensions follow edited geometry or warn when detached; stable references, undo and compatible save/reopen | WB-004, dimensions |
+| WB-019 | P1 | 3 | Proposed | Golden inch/mm/fraction fixtures agree across model, cut list, PDF and CSV; documented precision | WB-001, WB-005 |
+| WB-020 | P1 | 5 | Proposed | Section/scene/tag visibility and selection stay consistent on edits, undo, PDF and reopen; no lost planes | WB-MAC-03, WB-004 |
+| WB-021 | P1 | 5 | Proposed | Repeated cabinet parts become named component instances; cut-list quantities, grouping and Outliner reparenting preserve transforms | WB-016, components |
+| WB-022 | P1 | 5 | Proposed | Nesting handles rectangular/L-shaped fixtures, rotations, grain, kerf/trim, utilization and clear unplaced reasons | WB-005, layout |
+| WB-023 | P1 | 3 | Proposed | Live nesting inputs retain typed values and focused field during recompute; undo followed by edit does not reapply stale settings | WB-005, settings |
+| WB-024 | P1 | 5 | Proposed | Synthetic SKP import corpus, editing tool browser/native coverage, image and geometry regression fixtures in CI | WB-002, WB-008 |
+| WB-025 | P2 | 8 | Proposed | Opt-in guarded CLI/MCP modeling with safe file roots, transactions, live-file conflict detection and grouped parts | WB-017, WB-021 |
+| WB-026 | P2 | 8 | Proposed | Offcut inventory and reuse policy, glue-up strip/edge banding allowances, estimated purchasing and residual stock savings | WB-022, WB-005 |
+| WB-027 | P2 | 5 | Proposed | Editable cabinet and frame-panel recipes: independent back thickness, rails, stiles, clearances and verified parts | WB-016, components |
+| WB-028 | P2 | 8 | Proposed | Original joint/hardware workflow: dados/tenons/drilling with depth, offset, fit checks and matching reports | WB-027, geometry |
+| WB-029 | P2 | 5 | Proposed | Printable ordered assembly instructions with stable part IDs, joint references and stale-step warnings | WB-021, WB-028, WB-004 |
+| WB-030 | P2 | 8 | Proposed | Layout workspace and model-saved sheets: anchored scaled viewports, multi-page PDF/SVG/DXF and hidden lines | WB-004, WB-011 |
+| WB-031 | P2 | 5 | Proposed | Printable section styling: per-tag line/hatch/cut-fill priorities, consistent PDF colors and overlaps | WB-020, WB-030 |
+| WB-032 | P2 | 5 | Proposed | Fabrication exports with explicit units, part IDs, cut lines, optional drilling/centerlines and verified physical sizes | WB-011, WB-028 |
+| WB-033 | P2 | 5 | Proposed | Benchmarks and performance budgets on high-part/component models; redraw, save, undo and nesting memory | WB-024, geometry |
+| WB-034 | P3 | 5 | Proposed | Shortcut presets and conflict checks, trackpad/mouse/drag ergonomics, accessible measurements and 3D mouse evaluation | WB-009, platform UI |
+| WB-035 | P3 | 5 | Proposed | SketchUp annotation/texture/material import fidelity, reversible errors and provenance-safe synthetic fixtures | WB-024, importer |
+| WB-036 | P3 | 8 | Proposed | Optional curved and advanced geometry: chamfer/fillet/taper/subdivision with tolerance and undo regression | WB-007, geometry |
+| WB-037 | P3 | 5 | Proposed | Locked tags, isolate-selection, oriented drawing planes and drag-to-reparent with stable transforms | WB-021, scenes |
+| WB-038 | P2 | 5 | Proposed | Reliable fabrication section sheets: persistent section origin, hidden/internal line removal and validated cut caps | WB-020, WB-030 |
 
 Priorities are reviewed at every sprint boundary. New requests should become measurable backlog entries before implementation. See [docs/AGILE.md](AGILE.md) for states and definition of done.

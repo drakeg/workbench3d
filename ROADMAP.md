@@ -36,7 +36,8 @@ Long-term capabilities and rough priorities, open to discussion in issues. The a
 - ✅ Tags / layers with visibility
 - [ ] Printable shop drawings: orthographic views with dimensions to PDF
 - ✅ Cut list layout: parts on sheets and boards with saw kerf, trim and grain; steel cut from 20' sticks; printable PDF cutting plan
-- [ ] Cut list: edge banding, offcut reuse across projects, cost estimate from stock prices, part labels
+- ✅ Cut list: optional user-entered stock prices and material estimate (PR #40)
+- [ ] Cut list: edge banding, offcut reuse across projects and part labels
 
 ## Trade-specific add-ons
 - [ ] Woodworking: joinery (mortise & tenon, dado, dovetail), hardware library, edge banding
@@ -62,3 +63,13 @@ Long-term capabilities and rough priorities, open to discussion in issues. The a
 - [ ] Customizable shortcuts
 - [ ] Add-on gallery
 - [ ] Touch / iPad support
+
+## Peer issue-inspired improvements (independent implementations)
+The [issue research register](docs/PEER_ISSUE_RESEARCH.md) links specific Sawhorse, SketchCraft, IngeTrazo, WoodSketch, OpenCutList and FreeCAD issues to **new** Workbench3D stories. BenchUp published functionality is compared separately because its issues could not be verified with the connected GitHub tool. No third-party code or assets will be used.
+
+- **Correctness first:** future-proof saves/recovery (WB-017), associative dimensions (WB-018), dimension round-trip and rounding (WB-019), sections/scenes (WB-020), correct nesting and fields (WB-022/023), tool/import regression tests (WB-024).
+- **Shop productivity:** component quantities (WB-021), reusable offcuts and realistic costs (WB-026), configurable cabinets (WB-027), joints and hardware (WB-028), assembly plans (WB-029), fabrication exports (WB-032).
+- **Drawing quality:** sheet layouts, vector/hidden-line views, sections, hatch styles and physical-size validation (WB-030/031/038).
+- **Extensibility and scale:** guarded CLI/MCP (WB-025), large-model budgets (WB-033), UI/accessibility improvements (WB-034/037), import fidelity (WB-035), advanced geometry (WB-036).
+
+These items are **Proposed** until tested and merged. See Sprints 07–12 in [SPRINTS.md](docs/SPRINTS.md); continue ready development without treating customer discovery as a block.

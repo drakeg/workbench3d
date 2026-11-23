@@ -30,6 +30,12 @@ Adopt [central repository standards](https://github.com/drakeg/madmallard-reposi
 - Consider native Mac, Tauri Windows/Linux, browser, keyboard and trackpad behavior.
 - Respect existing add-on public API.
 
+## External issue research and independent development
+
+Peer projects are research references only. Read [docs/PEER_ISSUE_RESEARCH.md](docs/PEER_ISSUE_RESEARCH.md) when planning WB-017 through WB-038. The external GitHub issue number is provenance, **not** a bug confirmed in Workbench3D. Carry the acceptance criteria into original tests and small PRs, not third-party code. Do not copy algorithms, code, assets, text, UI screenshots, model files or test cases from Sawhorse, BenchUp, SketchCraft, IngeTrazo, WoodSketch, OpenCutList or FreeCAD. Never merge GPL source into this MIT project. If a dependency or model fixture is genuinely required, review its actual license, attribution and compatibility before adding it; otherwise generate synthetic fixtures. Document all provenance as issue links and mark completed only after CI passes and code merges.
+
+Business validation is a parallel learning activity, not a veto on building approved functionality. After each sprint or PR continue to the next ready item while respecting CI and review/merge safeguards.
+
 ## Safety
 Never commit credentials, user projects, generated installers, or proprietary assets. Do not force-push main, merge feature PRs without review approval, or trigger releases without authorization. Prefer supported secure dependencies; validate lockfiles and CI.
 
