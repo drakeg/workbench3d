@@ -628,5 +628,20 @@ check('cabinet material estimate uses whole sheet price', pricedEstimate.include
 await page.screenshot({ path: `${out}/cabinet-cost-estimate.png` });
 await page.screenshot({ path: `${out}/cabinet-demo.png` });
 
+// WB-017: dirty model must not be discarded unless the user explicitly chooses it.
+await page.evaluate(() => { window.workbench.doc.dirty = true; window.workbench.runCommand('file.new'); });
+await page.waitForSelector('.modal');
+const choices = await page.locator('.modal-footer button').allTextContents();
+check('unsaved work offers Save, Don\'t Save and Cancel',
+  choices.includes('Save') && choices.includes("Don't Save") && choices.includes('Cancel'), choices);
+await page.locator('.modal-footer button', { hasText: 'Cancel' }).click();
+check('Cancel leaves the active cabinet intact', (await state()).groups > 0);
+await page.evaluate(() => window.workbench.runCommand('file.new'));
+await page.waitForSelector('.modal');
+await page.locator('.modal-footer button', { hasText: "Don't Save" }).click();
+await page.waitForFunction(() => window.workbench.doc.root.children.length === 0);
+check('Don\'t Save creates a new model only after explicit confirmation',
+  (await state()).groups === 0);
+
 check('no page errors', errors.length === 0, errors);
 await browser.close();
