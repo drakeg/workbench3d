@@ -53,7 +53,7 @@
 
 ## Sprint 07 — Peer-driven safety and correctness (next ready reliability track)
 **Goal:** preserve existing user files and improve the reliability of the first saleable cabinet workflow. Start from the next ready P1 story after any broken CI/urgent defect; do not delay normal development for customer surveys.
-- **WB-017:** future-version .wb3d and unknown-field fixtures refuse destructive saves, autosave recovery is idempotent, and save/close dialogs offer Save, Don't Save or Cancel. Acceptance: no silent loss on open/save and no continuation after a failed/cancelled save.
+- **WB-017:** future-version .wb3d and unknown-field fixtures refuse destructive saves, autosave recovery is idempotent, and save/close dialogs offer Save, Don't Save or Cancel. **Current:** In Review (first increment): web and Mac guards, web Save/Don't Save/Cancel, autosave cleanup, regression tests; broader desktop close/recovery validation remains. Acceptance: no silent loss on open/save and no continuation after a failed/cancelled save.
 - **WB-018:** dimension endpoints reference identifiable geometry and follow Move/Scale; missing anchors are flagged rather than displaying silently stale measurements. Acceptance: editor undo, save/reopen and cross-platform fixtures.
 - **WB-019:** normalized inch/mm/fraction conversions; matching cut list, PDF and CSV quantities to stated precision. Acceptance: golden 1/8 in, 3/16 in, end-to-end export fixtures.
 - **WB-020:** nested section/tag visibility and scale selection state are consistent on hide, delete, undo, scene switching and print. Acceptance: model/printed views and section origins preserve actual state.
