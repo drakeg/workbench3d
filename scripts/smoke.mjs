@@ -638,6 +638,7 @@ check('unsaved work offers Save, Don\'t Save and Cancel',
   choices.includes('Save') && choices.includes("Don't Save") && choices.includes('Cancel'), choices);
 await unsavedPrompt.locator('.modal-footer button', { hasText: 'Cancel' }).click();
 check('Cancel leaves the active cabinet intact', (await state()).groups > 0);
+await page.waitForTimeout(200); // runCommand intentionally deduplicates the same command within 150 ms
 await page.evaluate(() => window.workbench.runCommand('file.new'));
 await unsavedPrompt.waitFor();
 await unsavedPrompt.locator('.modal-footer button', { hasText: "Don't Save" }).click();
