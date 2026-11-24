@@ -3,6 +3,7 @@ import type { Group } from '../src/core/document';
 import { LayoutResult, boardWidthFor, layoutParts } from '../src/core/cutlayout';
 import { PdfDoc, RGB, textWidth } from '../src/core/pdf';
 import { CostEstimate, estimateStockCost, money, parseStockPrice, stockQuoteKey } from '../src/core/materialCost';
+import { exportCutListCsv } from '../src/core/cutlistCsv';
 
 interface Row {
   name: string;
@@ -439,13 +440,7 @@ const cutlist: AddOn = {
       for (;;) {
         const choice = await api.ui.dialog('Cut list', root, ['Close', 'Download CSV', 'Download PDF'], { wide: true });
         if (choice === 'Download CSV') {
-          const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-          const csv = ['Qty,Part,Material,Thickness,Width,Length,Thickness (in),Width (in),Length (in)']
-            .concat(rows.map((r) => [r.qty, q(r.name), q(r.material), q(f(r.t)), q(f(r.w)), q(f(r.l)), r.t.toFixed(4), r.w.toFixed(4), r.l.toFixed(4)].join(',')))
-            .concat(['', 'Stock,Stock units,USD per stock unit,Extended USD,Unplaced parts'])
-            .concat(estimate.lines.map((l) => [q(l.label), l.count, l.unitPrice ?? '', l.extended ?? '', l.unplaced].join(',')))
-            .concat([`Quoted subtotal USD,${estimate.quotedSubtotal.toFixed(2)}`, `Estimated material total USD,${estimate.grandTotal === null ? 'INCOMPLETE' : estimate.grandTotal.toFixed(2)}`])
-            .join('\n');
+          const csv = exportCutListCsv(rows, estimate, f);
           api.ui.download('cut-list.csv', csv);
         } else if (choice === 'Download PDF') {
           const title = api.modelName();
