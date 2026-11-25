@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -32,5 +33,23 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+          # A rerun must not collide with an artifact from an earlier attempt.
+          name: github-pages-${{ github.run_attempt }}
+      - name: Wait for Pages artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          for attempt in {1..20}; do
+            count=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?name=${ARTIFACT_NAME}" --jq '.artifacts | length')
+            if [ "$count" = 1 ]; then exit 0; fi
+            if [ "$count" != 0 ]; then echo "Unexpected artifact count: $count"; exit 1; fi
+            sleep 3
+          done
+          echo "Pages artifact did not become visible" >&2
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
