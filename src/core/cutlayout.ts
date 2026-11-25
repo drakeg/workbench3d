@@ -64,10 +64,34 @@ interface Free {
 }
 
 const EPS = 1e-6;
+// Keep accidental or hostile imports from allocating unbounded placement arrays.
+const MAX_PLACEMENTS = 10_000;
+
+function positiveFinite(value: number, label: string): void {
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`${label} must be a positive finite length`);
+}
+
 
 /** Lay `parts` out on as few pieces of `stock` as it can. */
 export function layoutParts(parts: LayoutPart[], stock: StockSize, opts: LayoutOptions): LayoutResult {
   const { kerf, margin } = opts;
+  positiveFinite(stock.width, 'Stock width');
+  positiveFinite(stock.length, 'Stock length');
+  if (!Number.isFinite(stock.width * stock.length)) throw new Error('Stock area exceeds supported range');
+  if (!Number.isFinite(kerf) || kerf < 0) throw new Error('Saw kerf must be finite and non-negative');
+  if (!Number.isFinite(margin) || margin < 0) throw new Error('Stock trim margin must be finite and non-negative');
+  if (2 * margin >= stock.width || 2 * margin >= stock.length)
+    throw new Error('Stock trim margin leaves no usable cutting area');
+  let totalQuantity = 0;
+  for (const part of parts) {
+    positiveFinite(part.width, `Part "${part.name}" width`);
+    positiveFinite(part.length, `Part "${part.name}" length`);
+    if (!Number.isFinite(part.width * part.length)) throw new Error(`Part "${part.name}" area exceeds supported range`);
+    if (!Number.isSafeInteger(part.qty) || part.qty < 0)
+      throw new Error(`Part "${part.name}" quantity must be a non-negative integer`);
+    totalQuantity += part.qty;
+    if (totalQuantity > MAX_PLACEMENTS) throw new Error(`Cutting plan exceeds ${MAX_PLACEMENTS} parts`);
+  }
   const usableW = stock.width - 2 * margin;
   const usableL = stock.length - 2 * margin;
   const result: LayoutResult = { stock, pieces: [], tooBig: [] };

@@ -25,6 +25,36 @@ function valid(r: LayoutResult, kerf: number, margin = 0): boolean {
 }
 
 describe('cutting layout', () => {
+  it('rejects invalid stock and saw parameters instead of producing an unsafe plan', () => {
+    const part = [{ name: 'Panel', width: 10, length: 20, qty: 1, canRotate: false }];
+    for (const width of [0, -1, Infinity, NaN]) {
+      expect(() => layoutParts(part, { width, length: 96 }, opts)).toThrow(/Stock width/);
+    }
+    for (const length of [0, -5, Infinity, NaN]) {
+      expect(() => layoutParts(part, { width: 48, length }, opts)).toThrow(/Stock length/);
+    }
+    for (const kerf of [-0.125, Infinity, NaN]) {
+      expect(() => layoutParts(part, sheet, { kerf, margin: 0 })).toThrow(/Saw kerf/);
+    }
+    for (const margin of [-0.5, Infinity, NaN]) {
+      expect(() => layoutParts(part, sheet, { kerf: 0.125, margin })).toThrow(/trim margin/);
+    }
+    expect(() => layoutParts(part, sheet, { kerf: 0.125, margin: 24 })).toThrow(/no usable/);
+    expect(() => layoutParts(part, { width: 1e200, length: 1e200 }, opts)).toThrow(/Stock area/);
+  });
+
+  it('rejects corrupt part measurements, nonintegral quantities, and unbounded inputs', () => {
+    const part = { name: 'Shelf', width: 12, length: 24, qty: 1, canRotate: false };
+    for (const width of [0, -1, Infinity, NaN]) {
+      expect(() => layoutParts([{ ...part, width }], sheet, opts)).toThrow(/Shelf.*width/);
+    }
+    for (const qty of [-1, 0.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => layoutParts([{ ...part, qty }], sheet, opts)).toThrow(/quantity/);
+    }
+    expect(() => layoutParts([{ ...part, qty: 10_001 }], sheet, opts)).toThrow(/exceeds 10000 parts/);
+    expect(layoutParts([{ ...part, qty: 0 }], sheet, opts).pieces).toEqual([]);
+  });
+
   it('fits two half sheets on one sheet, kerf permitting', () => {
     const r = layoutParts([{ name: 'Side', width: 23.9, length: 96, qty: 2, canRotate: false }], sheet, opts);
     expect(r.pieces).toHaveLength(1);
