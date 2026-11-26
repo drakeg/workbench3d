@@ -63,7 +63,9 @@ interface Free {
   l: number;
 }
 
-const EPS = 1e-6;
+// Limit fit tolerance to sub-nanoinch rounding; larger tolerances can place
+// parts slightly outside purchased stock or trim clearances.
+const EPS = 1e-9;
 // Keep accidental or hostile imports from allocating unbounded placement arrays.
 const MAX_PLACEMENTS = 10_000;
 

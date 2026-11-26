@@ -55,6 +55,64 @@ describe('cutting layout', () => {
     expect(layoutParts([{ ...part, qty: 0 }], sheet, opts).pieces).toEqual([]);
   });
 
+  it('does not accept a near-fit part that exceeds stock or trim by a measurable amount', () => {
+    const tooWide = layoutParts(
+      [{ name: 'Overhang', width: 48.0000005, length: 20, qty: 1, canRotate: false }],
+      sheet, { kerf: 0.125, margin: 0 },
+    );
+    expect(tooWide.pieces).toHaveLength(0);
+    expect(tooWide.tooBig).toHaveLength(1);
+
+    const trimmed = layoutParts(
+      [{ name: 'Trim overhang', width: 47.0000005, length: 20, qty: 1, canRotate: false }],
+      sheet, { kerf: 0.125, margin: 0.5 },
+    );
+    expect(trimmed.pieces).toHaveLength(0);
+    expect(trimmed.tooBig).toHaveLength(1);
+  });
+
+  it('accounts for every copy as either placed or unplaced and reconciles purchased stock utilization', () => {
+    const cases = [
+      { parts: [{ name: 'Panel', width: 24, length: 48, qty: 3, canRotate: false }], options: { kerf: 0.125, margin: 0 } },
+      { parts: [{ name: 'Shelf', width: 0.1875, length: 12.125, qty: 10, canRotate: false }], options: { kerf: 0.125, margin: 0.5 } },
+      { parts: [{ name: 'Too wide', width: 60, length: 20, qty: 2, canRotate: false }], options: { kerf: 0.125, margin: 0 } },
+      { parts: [{ name: 'Rotatable', width: 60, length: 20, qty: 2, canRotate: true }], options: { kerf: 0.125, margin: 0 } },
+      { parts: [{ name: 'Exactly fits', width: 48, length: 96, qty: 1, canRotate: false }], options: { kerf: 0, margin: 0 } },
+    ];
+    for (const example of cases) {
+      const result = layoutParts(example.parts, sheet, example.options);
+      const placed = result.pieces.flatMap((piece) => piece.placements);
+      const requested = example.parts.reduce((total, part) => total + part.qty, 0);
+      expect(placed.length + result.tooBig.length).toBe(requested);
+      expect(valid(result, example.options.kerf, example.options.margin)).toBe(true);
+      for (const piece of result.pieces) {
+        const expectedArea = piece.placements.reduce((area, placement) => area + placement.width * placement.length, 0);
+        expect(piece.used).toBeCloseTo(expectedArea / (sheet.width * sheet.length), 10);
+        expect(piece.used).toBeGreaterThanOrEqual(0);
+        expect(piece.used).toBeLessThanOrEqual(1);
+      }
+      for (const placedPart of placed) {
+        const original = example.parts.find((part) => part.name === placedPart.name)!;
+        if (!original.canRotate) expect(placedPart.rotated).toBe(false);
+        expect(placedPart.width * placedPart.length).toBeCloseTo(original.width * original.length, 10);
+      }
+    }
+  });
+
+  it('respects grain and kerf across mixed-size adversarial stock layouts', () => {
+    const parts = [
+      { name: 'Long rail', width: 3.5, length: 81, qty: 2, canRotate: false },
+      { name: 'Short rail', width: 3.5, length: 14.75, qty: 5, canRotate: false },
+      { name: 'Square patch', width: 8, length: 8, qty: 5, canRotate: true },
+      { name: 'Unplaceable', width: 49, length: 97, qty: 1, canRotate: true },
+    ];
+    const result = layoutParts(parts, sheet, { kerf: 0.1875, margin: 0.5 });
+    expect(valid(result, 0.1875, 0.5)).toBe(true);
+    expect(result.tooBig.map((part) => part.name)).toEqual(['Unplaceable']);
+    expect(result.pieces.flatMap((piece) => piece.placements)).toHaveLength(12);
+    expect(result.pieces.flatMap((piece) => piece.placements).filter((p) => p.name === 'Long rail').every((p) => !p.rotated)).toBe(true);
+  });
+
   it('fits two half sheets on one sheet, kerf permitting', () => {
     const r = layoutParts([{ name: 'Side', width: 23.9, length: 96, qty: 2, canRotate: false }], sheet, opts);
     expect(r.pieces).toHaveLength(1);
