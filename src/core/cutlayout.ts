@@ -82,12 +82,15 @@ export function explainUnplacedPart(part: LayoutPart, stock: StockSize, opts: La
     w <= width + EPS && l <= length + EPS;
   const directFits = fits(part.width, part.length, usableW, usableL);
   const rotatedFits = fits(part.length, part.width, usableW, usableL);
-  if (!part.canRotate && !directFits && rotatedFits)
-    return 'Part would fit rotated 90°, but grain direction prevents rotation';
+  // A trim margin is the actionable blocker when the part would fit in its
+  // allowed orientation on untrimmed stock, even if a forbidden rotation could
+  // also make it fit within the trimmed area.
   const fitsRaw = fits(part.width, part.length, stock.width, stock.length)
     || (part.canRotate && fits(part.length, part.width, stock.width, stock.length));
   if (opts.margin > 0 && fitsRaw)
     return 'Part fits the stock only without the required trim margin';
+  if (!part.canRotate && !directFits && rotatedFits)
+    return 'Part would fit rotated 90°, but grain direction prevents rotation';
   if (!part.canRotate) {
     if (part.width > usableW + EPS && part.length > usableL + EPS)
       return 'Part exceeds both usable stock width and length';
