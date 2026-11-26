@@ -113,6 +113,45 @@ describe('cutting layout', () => {
     expect(result.pieces.flatMap((piece) => piece.placements).filter((p) => p.name === 'Long rail').every((p) => !p.rotated)).toBe(true);
   });
 
+  it('explains grain, trim, width, length and both oversized dimensions', () => {
+    const cases = [
+      {
+        part: { name: 'Grain locked', width: 60, length: 40, qty: 1, canRotate: false },
+        stock: sheet, options: opts, expected: /grain direction prevents rotation/,
+      },
+      {
+        part: { name: 'Trim clearance', width: 47.5, length: 20, qty: 1, canRotate: false },
+        stock: sheet, options: { kerf: 0.125, margin: 0.5 }, expected: /trim margin/,
+      },
+      {
+        part: { name: 'Too wide', width: 50, length: 20, qty: 1, canRotate: false },
+        stock: sheet, options: opts, expected: /stock width/,
+      },
+      {
+        part: { name: 'Too long', width: 10, length: 97, qty: 1, canRotate: false },
+        stock: sheet, options: opts, expected: /stock length/,
+      },
+      {
+        part: { name: 'Both', width: 50, length: 97, qty: 1, canRotate: false },
+        stock: sheet, options: opts, expected: /both usable stock width and length/,
+      },
+      {
+        part: { name: 'All orientations', width: 60, length: 97, qty: 1, canRotate: true },
+        stock: sheet, options: opts, expected: /every allowed orientation/,
+      },
+    ];
+    for (const fixture of cases) {
+      const result = layoutParts([fixture.part], fixture.stock, fixture.options);
+      expect(result.pieces).toHaveLength(0);
+      expect(result.tooBig).toHaveLength(1);
+      expect(result.tooBig[0].reason).toMatch(fixture.expected);
+      expect(result.tooBig[0].name).toBe(fixture.part.name);
+    }
+    const allowed = layoutParts([{ name: 'Can rotate', width: 60, length: 40, qty: 1, canRotate: true }], sheet, opts);
+    expect(allowed.tooBig).toHaveLength(0);
+    expect(allowed.pieces[0].placements[0].rotated).toBe(true);
+  });
+
   it('fits two half sheets on one sheet, kerf permitting', () => {
     const r = layoutParts([{ name: 'Side', width: 23.9, length: 96, qty: 2, canRotate: false }], sheet, opts);
     expect(r.pieces).toHaveLength(1);
