@@ -36,7 +36,7 @@ Source issue-by-issue provenance, eligibility and detailed acceptance criteria: 
 | WB-019 | P1 | 3 | In progress (PR #49 merged; CSV/PDF export fixture PR pending; native parity remains) | Golden inch/mm/fraction fixtures agree across model, cut list, PDF and CSV; documented precision | WB-001, WB-005 |
 | WB-020 | P1 | 5 | Proposed | Section/scene/tag visibility and selection stay consistent on edits, undo, PDF and reopen; no lost planes | WB-MAC-03, WB-004 |
 | WB-021 | P1 | 5 | Proposed | Repeated cabinet parts become named component instances; cut-list quantities, grouping and Outliner reparenting preserve transforms | WB-016, components |
-| WB-022 | P1 | 5 | In progress (stock/part validation PR pending; adversarial geometry fixtures remain) | Nesting handles rectangular/L-shaped fixtures, rotations, grain, kerf/trim, utilization and clear unplaced reasons | WB-005, layout |
+| WB-022 | P1 | 5 | In progress (PR #52 merged; adversarial nesting and utilization fixture PR pending; L-shaped parts remain) | Nesting handles rectangular/L-shaped fixtures, rotations, grain, kerf/trim, utilization and clear unplaced reasons | WB-005, layout |
 | WB-023 | P1 | 3 | Proposed | Live nesting inputs retain typed values and focused field during recompute; undo followed by edit does not reapply stale settings | WB-005, settings |
 | WB-024 | P1 | 5 | Proposed | Synthetic SKP import corpus, editing tool browser/native coverage, image and geometry regression fixtures in CI | WB-002, WB-008 |
 | WB-025 | P2 | 8 | Proposed | Opt-in guarded CLI/MCP modeling with safe file roots, transactions, live-file conflict detection and grouped parts | WB-017, WB-021 |
