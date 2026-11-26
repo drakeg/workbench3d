@@ -221,7 +221,7 @@ function buildPdf(groups: StockGroup[], layouts: LayoutResult[], rows: Row[], s:
     pdf.text(`${g.label}: ${what}  (${Math.round(avg * 100)}% used)`, M, y, { size: 10 });
     y += 14;
     for (const b of lay.tooBig) {
-      pdf.text(`  ${b.name} (${fmt(b.length)} × ${fmt(b.width)}) is bigger than the stock`, M, y, { size: 9, color: [0.7, 0.1, 0.1] });
+      pdf.text(`  ${b.name} (${fmt(b.length)} × ${fmt(b.width)}) — ${b.reason}`, M, y, { size: 9, color: [0.7, 0.1, 0.1] });
       y += 13;
     }
   });
@@ -379,7 +379,7 @@ const cutlist: AddOn = {
                 <label>USD per ${g.kind === 'sheet' ? 'sheet' : 'board'} <input name="price" inputmode="decimal" type="text" size="8" aria-label="Price per stock unit for ${esc(g.label)}" value="${settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)] === undefined ? '' : settings.prices[stockQuoteKey(g.key, g.kind, g.width, g.length)].toFixed(2)}"></label>
                 <span class="muted">${n} ${g.kind === 'sheet' ? (n === 1 ? 'sheet' : 'sheets') : n === 1 ? 'board' : 'boards'}, ${avg}% used</span>
               </div>
-              ${lay.tooBig.map((b) => `<p class="error">${esc(b.name)} (${f(b.length)} × ${f(b.width)}) doesn't fit on this stock.</p>`).join('')}
+              ${lay.tooBig.map((b) => `<p class="error">${esc(b.name)} (${f(b.length)} × ${f(b.width)}) — ${esc(b.reason)}.</p>`).join('')}
               ${lay.pieces.map((_, pi) => pieceSvg(lay, pi, f)).join('')}
             </div>`;
           })
