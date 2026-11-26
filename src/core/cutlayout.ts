@@ -47,7 +47,7 @@ export interface LayoutResult {
   stock: StockSize;
   pieces: StockPiece[];
   /** Parts too big for the stock, even turned. */
-  tooBig: { name: string; width: number; length: number }[];
+  tooBig: { name: string; width: number; length: number; reason: string }[];
 }
 
 export interface LayoutOptions {
@@ -73,6 +73,29 @@ function positiveFinite(value: number, label: string): void {
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${label} must be a positive finite length`);
 }
 
+
+/** Explain why a part cannot be cut from the selected stock, including trim and grain. */
+export function explainUnplacedPart(part: LayoutPart, stock: StockSize, opts: LayoutOptions): string {
+  const usableW = stock.width - 2 * opts.margin;
+  const usableL = stock.length - 2 * opts.margin;
+  const fits = (w: number, l: number, width: number, length: number) =>
+    w <= width + EPS && l <= length + EPS;
+  const directFits = fits(part.width, part.length, usableW, usableL);
+  const rotatedFits = fits(part.length, part.width, usableW, usableL);
+  if (!part.canRotate && !directFits && rotatedFits)
+    return 'Part would fit rotated 90°, but grain direction prevents rotation';
+  const fitsRaw = fits(part.width, part.length, stock.width, stock.length)
+    || (part.canRotate && fits(part.length, part.width, stock.width, stock.length));
+  if (opts.margin > 0 && fitsRaw)
+    return 'Part fits the stock only without the required trim margin';
+  if (!part.canRotate) {
+    if (part.width > usableW + EPS && part.length > usableL + EPS)
+      return 'Part exceeds both usable stock width and length';
+    if (part.width > usableW + EPS) return 'Part exceeds usable stock width';
+    if (part.length > usableL + EPS) return 'Part exceeds usable stock length';
+  }
+  return 'Part exceeds usable stock dimensions in every allowed orientation';
+}
 
 /** Lay `parts` out on as few pieces of `stock` as it can. */
 export function layoutParts(parts: LayoutPart[], stock: StockSize, opts: LayoutOptions): LayoutResult {
@@ -110,7 +133,7 @@ export function layoutParts(parts: LayoutPart[], stock: StockSize, opts: LayoutO
     const orients: [number, number, boolean][] = [[p.width, p.length, false]];
     if (p.canRotate && Math.abs(p.width - p.length) > EPS) orients.push([p.length, p.width, true]);
     if (!orients.some(([w, l]) => w <= usableW + EPS && l <= usableL + EPS)) {
-      result.tooBig.push({ name: p.name, width: p.width, length: p.length });
+      result.tooBig.push({ name: p.name, width: p.width, length: p.length, reason: explainUnplacedPart(p, stock, opts) });
       continue;
     }
 
