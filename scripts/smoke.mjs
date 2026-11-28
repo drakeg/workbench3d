@@ -101,6 +101,28 @@ await page.screenshot({ path: `${out}/cutlist.png` });
 await page.click('[role=tab][data-tab=layout]');
 const sheets = await page.$$eval('svg.cut-sheet', (s) => s.length);
 check('cut list lays the parts out on stock', sheets >= 2, sheets);
+// Regression WB-023: rerendering a layout after an Enter/change must not
+// discard a focused measurement's exact fractional text or caret position.
+const kerfInput = page.locator('.cut-settings input[name=kerf]');
+await kerfInput.fill('3/16');
+await kerfInput.evaluate((el) => el.setSelectionRange(2, 2));
+await kerfInput.dispatchEvent('change');
+const kerfEdit = await page.evaluate(() => {
+  const el = document.querySelector('.cut-settings input[name=kerf]');
+  return { value: el.value, focused: document.activeElement === el, caret: el.selectionStart };
+});
+check('layout keeps focused typed kerf and caret after recompute', kerfEdit.value === '3/16' && kerfEdit.focused && kerfEdit.caret === 2, kerfEdit);
+await kerfInput.fill('1/8');
+await kerfInput.dispatchEvent('change');
+const stockInput = page.locator('.cut-group input[name=width]').first();
+await stockInput.fill('48"');
+await stockInput.evaluate((el) => el.setSelectionRange(1, 1));
+await stockInput.dispatchEvent('change');
+const stockEdit = await page.evaluate(() => {
+  const el = document.querySelector('.cut-group input[name=width]');
+  return { value: el.value, focused: document.activeElement === el, caret: el.selectionStart };
+});
+check('layout keeps focused stock width and caret after recompute', stockEdit.value === '48"' && stockEdit.focused && stockEdit.caret === 1, stockEdit);
 await page.screenshot({ path: `${out}/cutlist-layout.png` });
 const [pdfDownload] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer button.primary')]);
 const pdfHead = (await (await import('node:fs')).promises.readFile(await pdfDownload.path())).subarray(0, 8).toString();
