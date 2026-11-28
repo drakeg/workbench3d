@@ -1,6 +1,6 @@
 # Release policy
 
-Workbench3D follows [Semantic Versioning](https://semver.org/) with additional pre-1.0 compatibility rules. This document is the source of truth for deciding **whether and when** to ship a release. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements and [docs/SPRINTS.md](docs/SPRINTS.md) for planned delivery.
+Workbench3D follows [Semantic Versioning](https://semver.org/) with additional pre-1.0 compatibility rules. This document is the source of truth for deciding **whether and when** to ship a release. See [docs/RELEASE_TRAIN.md](docs/RELEASE_TRAIN.md) for the proposed review calendar, release register and installer smoke tests. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements and [docs/SPRINTS.md](docs/SPRINTS.md) for planned delivery.
 
 ## When a release happens
 

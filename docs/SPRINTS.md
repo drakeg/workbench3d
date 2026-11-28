@@ -1,5 +1,7 @@
 # Planned Workbench3D sprints
 
+**Release candidates:** proposed every other Friday starting December 4, 2026; see [RELEASE_TRAIN.md](RELEASE_TRAIN.md). Candidate reviews do not guarantee published installers.
+
 **Planning baseline:** November 18, 2026. These are *proposed* two-week iterations, not approved delivery promises; actual dates/capacity are confirmed at sprint planning. Track individual work in [BACKLOG.md](BACKLOG.md) and GitHub Issues/PRs. Never mark a sprint complete before verifying merged work.
 
 | Sprint | Proposed window | Goal | Planned backlog IDs | Status |
