@@ -386,10 +386,31 @@ const cutlist: AddOn = {
           .join('');
         updateEstimate();
       };
-      const recompute = () => {
+      const recompute = (source?: HTMLInputElement | HTMLSelectElement) => {
+        // Rebuilding the layout replaces input elements. If a text field still has
+        // focus (for example when Enter commits a value), retain the user's exact
+        // typed units, cursor selection and keyboard focus after recomputing.
+        const keep = source instanceof HTMLInputElement
+          && source.type === 'text' && document.activeElement === source && root.contains(source);
+        const key = keep ? source.closest<HTMLElement>('.cut-group')?.dataset.key : undefined;
+        const name = keep ? source.name : '';
+        const value = keep ? source.value : '';
+        const start = keep ? source.selectionStart : null;
+        const end = keep ? source.selectionEnd : null;
         groups = stockGroups(rows, settings, f);
         layouts = groups.map((g) => layoutGroup(g, settings));
         render();
+        if (keep) {
+          const group = key === undefined ? root : [...groupsEl.querySelectorAll<HTMLElement>('.cut-group')]
+            .find((item) => item.dataset.key === key);
+          const replacement = [...(group?.querySelectorAll<HTMLInputElement>('input[type="text"]') ?? [])]
+            .find((item) => item.name === name);
+          if (replacement) {
+            replacement.value = value;
+            replacement.focus();
+            if (start !== null && end !== null) replacement.setSelectionRange(start, end);
+          }
+        }
       };
       render();
 
@@ -434,7 +455,7 @@ const cutlist: AddOn = {
           settings.stock[g.key] = cur;
         }
         save(settings);
-        recompute();
+        recompute(t);
       });
 
       for (;;) {
