@@ -124,7 +124,7 @@ describe('cutting layout', () => {
         stock: sheet, options: { kerf: 0.125, margin: 0.5 }, expected: /trim margin/,
       },
       {
-        part: { name: 'Too wide', width: 50, length: 20, qty: 1, canRotate: false },
+        part: { name: 'Too wide', width: 100, length: 20, qty: 1, canRotate: false },
         stock: sheet, options: opts, expected: /stock width/,
       },
       {
