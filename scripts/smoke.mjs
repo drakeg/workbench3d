@@ -507,10 +507,28 @@ if (heights[0] === 10 && heights[1] === 10) {
 check('editing one instance updates the other', heights[0] === 12 && heights[1] === 12, heights);
 await page.screenshot({ path: `${out}/components.png` });
 
-// Right-click context menu on a group
+// Right-click context menu on a group. Reframe after the preceding move,
+// scale and edit operations: a stale camera makes projected coordinates fall
+// outside the canvas and the context-menu wait times out with no explanation.
+await page.keyboard.press('Escape');
+await page.evaluate(() => {
+  const a = window.workbench;
+  a.setTool('select');
+  a.vp.setStandardView('iso', a.modelBounds());
+});
+await page.waitForTimeout(200);
 q = await proj(5, 45, 6);
+const contextTarget = await page.evaluate(([x, y]) => {
+  const a = window.workbench;
+  const rect = a.vp.dom.getBoundingClientRect();
+  const inside = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  return { inside, hit: inside && !!a.vp.raycastFaces(a.vp.ray(x - rect.left, y - rect.top)) };
+}, q);
+check('component context-menu target is visible and pickable', contextTarget.inside && contextTarget.hit, contextTarget);
+if (!contextTarget.inside || !contextTarget.hit)
+  throw new Error('Component context-menu target is not pickable after framing model');
 await page.mouse.click(q[0], q[1], { button: 'right' });
-await page.waitForSelector('.context-menu');
+await page.waitForSelector('.context-menu', { timeout: 5000 });
 const menuItems = await page.$$eval('.context-menu .menu-item span', (els) => els.map((e) => e.textContent));
 check('context menu offers Make Unique and Explode', menuItems.includes('Make Unique') && menuItems.includes('Explode'), menuItems);
 await page.click('.context-menu .menu-item:has-text("Make Unique")');
