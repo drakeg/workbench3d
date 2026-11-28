@@ -37,7 +37,7 @@ Source issue-by-issue provenance, eligibility and detailed acceptance criteria: 
 | WB-020 | P1 | 5 | Proposed | Section/scene/tag visibility and selection stay consistent on edits, undo, PDF and reopen; no lost planes | WB-MAC-03, WB-004 |
 | WB-021 | P1 | 5 | Proposed | Repeated cabinet parts become named component instances; cut-list quantities, grouping and Outliner reparenting preserve transforms | WB-016, components |
 | WB-022 | P1 | 5 | In progress (PRs #52, #55 and #56 merged; L-shaped parts remain) | Nesting handles rectangular/L-shaped fixtures, rotations, grain, kerf/trim, utilization and clear unplaced reasons | WB-005, layout |
-| WB-023 | P1 | 3 | Proposed | Live nesting inputs retain typed values and focused field during recompute; undo followed by edit does not reapply stale settings | WB-005, settings |
+| WB-023 | P1 | 3 | In progress (focused text and caret preservation PR pending; undo integration remains) | Live nesting inputs retain typed values and focused field during recompute; undo followed by edit does not reapply stale settings | WB-005, settings |
 | WB-024 | P1 | 5 | Proposed | Synthetic SKP import corpus, editing tool browser/native coverage, image and geometry regression fixtures in CI | WB-002, WB-008 |
 | WB-025 | P2 | 8 | Proposed | Opt-in guarded CLI/MCP modeling with safe file roots, transactions, live-file conflict detection and grouped parts | WB-017, WB-021 |
 | WB-026 | P2 | 8 | Proposed | Offcut inventory and reuse policy, glue-up strip/edge banding allowances, estimated purchasing and residual stock savings | WB-022, WB-005 |
