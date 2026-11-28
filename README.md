@@ -116,7 +116,7 @@ See **[docs/ADDONS.md](docs/ADDONS.md)** and the example [`examples/addons/cabin
 
 Current work is tracked in the [planned sprints](docs/SPRINTS.md) and [prioritized backlog](docs/BACKLOG.md). See the [Agile workflow](docs/AGILE.md) and [agent instructions](AGENTS.md) for implementation and review conventions.
 
-For versioning, release timing, platform checks, and recovery procedures, see [RELEASES.md](RELEASES.md). For vulnerability handling, see [SECURITY.md](SECURITY.md); for the first paying-customer hypothesis, see [docs/COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md).
+For versioning and release safeguards, see [RELEASES.md](RELEASES.md). For the next candidate review, published installer list, platform test instructions, and release register, see [docs/RELEASE_TRAIN.md](docs/RELEASE_TRAIN.md). For vulnerability handling, see [SECURITY.md](SECURITY.md); for the first paying-customer hypothesis, see [docs/COMMERCIALIZATION.md](docs/COMMERCIALIZATION.md).
 
 ## Contributing
 
